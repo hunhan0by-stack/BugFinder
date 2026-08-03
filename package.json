@@ -6,12 +6,19 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "test": "node --experimental-strip-types --import ./tests/register-alias.mjs --test tests/url-validation.test.ts tests/url-validation-phase4.test.ts tests/ip-policy.test.ts tests/hostname-policy.test.ts tests/port-policy.test.ts tests/dns-policy.test.ts tests/scan-storage.test.ts tests/scan-response.test.ts tests/basic-scan.test.ts"
   },
   "dependencies": {
+    "@axe-core/playwright": "^4.12.1",
+    "axe-core": "^4.12.1",
     "next": "16.2.12",
+    "playwright": "^1.62.1",
     "react": "19.2.4",
-    "react-dom": "19.2.4"
+    "react-dom": "19.2.4",
+    "server-only": "^0.0.1",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
