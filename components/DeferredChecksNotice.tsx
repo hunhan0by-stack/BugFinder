@@ -1,9 +1,9 @@
 import type { DeferredCheck, ScanSecuritySummary } from "@/types/scan";
 
 const DEFERRED_LABELS: Record<DeferredCheck, string> = {
-  advancedWorkflow: "Advanced controlled workflows",
-  visualRegression: "Visual regression foundation",
   authenticatedSession: "Authenticated test sessions",
+  visualBaselineRegression: "Visual baseline regression",
+  scheduledScanning: "Scheduled scanning",
 };
 
 const CAPABILITY_LABELS: Record<string, string> = {
@@ -18,6 +18,8 @@ const CAPABILITY_LABELS: Record<string, string> = {
   mobileLayoutAnalysis: "Mobile layout analysis",
   accessibilityAnalysis: "Accessibility analysis",
   safeInteractionAnalysis: "Safe interaction analysis",
+  issueEvidenceAnalysis: "Issue-specific evidence capture",
+  reversibleWorkflowAnalysis: "Reversible workflow analysis",
 };
 
 export default function DeferredChecksNotice({
@@ -54,7 +56,7 @@ export default function DeferredChecksNotice({
           <>
             <p className="text-muted mt-2 text-sm leading-relaxed">
               These options were included in the requested configuration but were
-              not executed by the Phase 6 scanner.
+              not executed by the Phase 8 scanner.
             </p>
             <ul className="mt-2 list-disc space-y-1 pl-5 text-sm">
               {deferredChecks.map((check) => (

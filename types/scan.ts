@@ -7,7 +7,9 @@ export type ScanOptionKey =
   | "mobileLayout"
   | "accessibility"
   | "screenshots"
-  | "safeInteractions";
+  | "safeInteractions"
+  | "issueEvidence"
+  | "reversibleWorkflows";
 
 export type ScanOptions = {
   consoleErrors: boolean;
@@ -17,6 +19,8 @@ export type ScanOptions = {
   accessibility: boolean;
   screenshots: boolean;
   safeInteractions: boolean;
+  issueEvidence: boolean;
+  reversibleWorkflows: boolean;
 };
 
 export type ScanRequestInput = {
@@ -24,11 +28,11 @@ export type ScanRequestInput = {
   options: ScanOptions;
 };
 
-/** Reserved for Phase 8+ deferred capabilities. Phase 7 returns []. */
+/** Reserved for Phase 9+ deferred capabilities. Phase 8 returns []. */
 export type DeferredCheck =
-  | "advancedWorkflow"
-  | "visualRegression"
-  | "authenticatedSession";
+  | "authenticatedSession"
+  | "visualBaselineRegression"
+  | "scheduledScanning";
 
 export type ScanProfile = "DESKTOP" | "MOBILE";
 
@@ -75,6 +79,7 @@ export type DiagnosticIssueType =
   | "HTTP_ERROR"
   | "BROKEN_IMAGE"
   | "DEAD_CLICK"
+  | "STATE_TRANSITION_ISSUE"
   | "OBSTRUCTED_CONTROL"
   | "FORM_STATE_ISSUE"
   | "MOBILE_OVERFLOW"
@@ -116,6 +121,7 @@ export type DiagnosticIssue = {
   firstSeenMs: number;
   lastSeenMs: number;
   metadata: Record<string, string | number | boolean | null>;
+  evidenceIds?: string[];
 };
 
 export type DiagnosticSeveritySummary = {
@@ -137,6 +143,7 @@ export type DiagnosticTypeSummary = {
   deadClicks: number;
   obstructedControls: number;
   formStateIssues: number;
+  stateTransitionIssues: number;
 };
 
 export type DiagnosticLimitSummary = {
@@ -153,6 +160,8 @@ export type DiagnosticCapabilityStatuses = {
   mobileLayout: DiagnosticStatus;
   accessibility: DiagnosticStatus;
   safeInteractions: DiagnosticStatus;
+  issueEvidence: DiagnosticStatus;
+  reversibleWorkflows: DiagnosticStatus;
 };
 
 export type BrokenImageAnalysis = {
@@ -225,10 +234,79 @@ export type SafeInteractionAnalysis = {
   skippedPopupCount: number;
   skippedDownloadCount: number;
   skippedOffscreenCount: number;
+  skippedDisabledCount: number;
   skippedUnstableCount: number;
   skippedUnknownRiskCount: number;
   candidateLimitReached: boolean;
   clickLimitReached: boolean;
+  mutationLimitReached: boolean;
+  issueLimitReached: boolean;
+  notices: string[];
+};
+
+export type EvidenceKind =
+  | "ELEMENT_SCREENSHOT"
+  | "CONTEXT_SCREENSHOT"
+  | "BEFORE_INTERACTION"
+  | "AFTER_INTERACTION"
+  | "AFTER_REVERSAL";
+
+export type EvidenceStateLabel =
+  | "BASELINE"
+  | "AFTER_FIRST_CLICK"
+  | "AFTER_REVERSAL";
+
+export type EvidenceClip = {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+};
+
+export type DiagnosticEvidenceArtifact = {
+  id: string;
+  kind: EvidenceKind;
+  profile: ScanProfile;
+  issueId?: string;
+  relativePath: string;
+  publicUrl: string;
+  width: number;
+  height: number;
+  byteSize: number;
+  capturedAtMs: number;
+  selector?: string;
+  clip?: EvidenceClip;
+  stateLabel?: EvidenceStateLabel;
+  truncated: boolean;
+};
+
+export type IssueEvidenceAnalysis = {
+  status: DiagnosticStatus;
+  requested: boolean;
+  artifactCount: number;
+  totalBytes: number;
+  artifactLimitReached: boolean;
+  byteLimitReached: boolean;
+  artifacts: DiagnosticEvidenceArtifact[];
+  notices: string[];
+};
+
+export type ReversibleWorkflowAnalysis = {
+  status: DiagnosticStatus;
+  requested: boolean;
+  discoveredReversibleCandidateCount: number;
+  eligibleWorkflowCount: number;
+  attemptedWorkflowCount: number;
+  completedWorkflowCount: number;
+  successfulReversalCount: number;
+  stateTransitionIssueCount: number;
+  skippedUnsafeCount: number;
+  skippedNetworkCount: number;
+  skippedNavigationCount: number;
+  skippedObstructionCount: number;
+  skippedUnstableCount: number;
+  skippedBusyCount: number;
+  workflowLimitReached: boolean;
   mutationLimitReached: boolean;
   issueLimitReached: boolean;
   notices: string[];
@@ -249,8 +327,9 @@ export type DiagnosticResult = {
 };
 
 /**
- * Successful Phase 7 result. Single-page desktop/mobile scan with selected
- * diagnostics and optional bounded safe interactions — not a full QA assessment.
+ * Successful Phase 8 result. Single-page desktop/mobile scan with selected
+ * diagnostics, optional safe interactions, issue evidence, and reversible
+ * workflows — not a full QA assessment.
  */
 export type BasicScanResult = {
   success: true;
@@ -268,6 +347,8 @@ export type BasicScanResult = {
   mobileLayoutAnalysis: MobileLayoutAnalysis;
   accessibilityAnalysis: AccessibilityAnalysis;
   safeInteractionAnalysis: SafeInteractionAnalysis;
+  issueEvidenceAnalysis: IssueEvidenceAnalysis;
+  reversibleWorkflowAnalysis: ReversibleWorkflowAnalysis;
   executedCapabilities: string[];
   deferredChecks: DeferredCheck[];
   security: ScanSecuritySummary;

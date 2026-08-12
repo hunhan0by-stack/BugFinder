@@ -2,7 +2,11 @@
 
 import { useState } from "react";
 import DiagnosticIssueCard from "./DiagnosticIssueCard";
-import type { DiagnosticIssue, Severity } from "@/types/scan";
+import type {
+  DiagnosticEvidenceArtifact,
+  DiagnosticIssue,
+  Severity,
+} from "@/types/scan";
 
 const FILTERS: Array<{ id: "ALL" | Severity; label: string }> = [
   { id: "ALL", label: "All" },
@@ -15,9 +19,11 @@ const FILTERS: Array<{ id: "ALL" | Severity; label: string }> = [
 export default function DiagnosticFilters({
   issues,
   counts,
+  evidenceArtifacts = [],
 }: {
   issues: DiagnosticIssue[];
   counts: Record<Severity, number> & { ALL: number };
+  evidenceArtifacts?: DiagnosticEvidenceArtifact[];
 }) {
   const [active, setActive] = useState<"ALL" | Severity>("ALL");
 
@@ -61,7 +67,10 @@ export default function DiagnosticFilters({
         <ul className="space-y-4">
           {visible.map((issue) => (
             <li key={issue.id}>
-              <DiagnosticIssueCard issue={issue} />
+              <DiagnosticIssueCard
+                issue={issue}
+                evidenceArtifacts={evidenceArtifacts}
+              />
             </li>
           ))}
         </ul>

@@ -21,11 +21,12 @@ const TYPE_ORDER: Record<DiagnosticIssue["type"], number> = {
   HTTP_ERROR: 3,
   BROKEN_IMAGE: 4,
   DEAD_CLICK: 5,
-  OBSTRUCTED_CONTROL: 6,
-  FORM_STATE_ISSUE: 7,
-  MOBILE_VIEWPORT: 8,
-  MOBILE_OVERFLOW: 9,
-  ACCESSIBILITY_VIOLATION: 10,
+  STATE_TRANSITION_ISSUE: 6,
+  OBSTRUCTED_CONTROL: 7,
+  FORM_STATE_ISSUE: 8,
+  MOBILE_VIEWPORT: 9,
+  MOBILE_OVERFLOW: 10,
+  ACCESSIBILITY_VIOLATION: 11,
 };
 
 /**
@@ -82,6 +83,7 @@ export function createTypeSummary(
     deadClicks: 0,
     obstructedControls: 0,
     formStateIssues: 0,
+    stateTransitionIssues: 0,
   };
   for (const issue of issues) {
     if (issue.type === "CONSOLE_ERROR") summary.consoleErrors += 1;
@@ -102,6 +104,8 @@ export function createTypeSummary(
       summary.obstructedControls += 1;
     } else if (issue.type === "FORM_STATE_ISSUE") {
       summary.formStateIssues += 1;
+    } else if (issue.type === "STATE_TRANSITION_ISSUE") {
+      summary.stateTransitionIssues += 1;
     }
   }
   return summary;

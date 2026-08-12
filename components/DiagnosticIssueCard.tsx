@@ -1,4 +1,6 @@
+import { IssueEvidenceThumbs } from "./IssueEvidenceGallery";
 import type {
+  DiagnosticEvidenceArtifact,
   DiagnosticIssue,
   DiagnosticIssueType,
   ScanProfile,
@@ -11,6 +13,7 @@ const TYPE_LABELS: Record<DiagnosticIssueType, string> = {
   HTTP_ERROR: "HTTP error response",
   BROKEN_IMAGE: "Broken image",
   DEAD_CLICK: "Dead click",
+  STATE_TRANSITION_ISSUE: "State transition issue",
   OBSTRUCTED_CONTROL: "Obstructed control",
   FORM_STATE_ISSUE: "Form state issue",
   MOBILE_OVERFLOW: "Mobile overflow",
@@ -24,10 +27,17 @@ function profileLabel(profile: ScanProfile): string {
 
 export default function DiagnosticIssueCard({
   issue,
+  evidenceArtifacts = [],
 }: {
   issue: DiagnosticIssue;
+  evidenceArtifacts?: DiagnosticEvidenceArtifact[];
 }) {
   const typeLabel = TYPE_LABELS[issue.type];
+  const linkedEvidence = evidenceArtifacts.filter(
+    (artifact) =>
+      artifact.issueId === issue.id ||
+      (issue.evidenceIds ?? []).includes(artifact.id),
+  );
 
   const scopeLabel =
     issue.scope === "MAIN_DOCUMENT"
@@ -118,6 +128,9 @@ export default function DiagnosticIssueCard({
           </details>
         ) : null}
       </div>
+      {linkedEvidence.length > 0 ? (
+        <IssueEvidenceThumbs artifacts={linkedEvidence} issue={issue} />
+      ) : null}
     </article>
   );
 }

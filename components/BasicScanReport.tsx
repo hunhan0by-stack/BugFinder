@@ -5,6 +5,7 @@ import CapabilityStatusPanel from "./CapabilityStatusPanel";
 import DeferredChecksNotice from "./DeferredChecksNotice";
 import DiagnosticReport from "./DiagnosticReport";
 import ExportButton from "./ExportButton";
+import IssueEvidenceGallery from "./IssueEvidenceGallery";
 import ScreenshotEvidence from "./ScreenshotEvidence";
 import type {
   AccessibilityAnalysis,
@@ -12,6 +13,7 @@ import type {
   BrokenImageAnalysis,
   DiagnosticStatus,
   MobileLayoutAnalysis,
+  ReversibleWorkflowAnalysis,
   SafeInteractionAnalysis,
 } from "@/types/scan";
 
@@ -313,6 +315,18 @@ function SafeInteractionAnalysisSection({
               </dd>
             </div>
             <div className="border-line rounded-xl border px-3 py-2">
+              <dt className="text-muted text-xs font-medium">Skipped offscreen</dt>
+              <dd className="text-lg font-semibold">
+                {analysis.skippedOffscreenCount}
+              </dd>
+            </div>
+            <div className="border-line rounded-xl border px-3 py-2">
+              <dt className="text-muted text-xs font-medium">Skipped disabled</dt>
+              <dd className="text-lg font-semibold">
+                {analysis.skippedDisabledCount}
+              </dd>
+            </div>
+            <div className="border-line rounded-xl border px-3 py-2">
               <dt className="text-muted text-xs font-medium">Skipped unsafe</dt>
               <dd className="text-lg font-semibold">
                 {analysis.skippedUnsafeCount +
@@ -369,6 +383,109 @@ function SafeInteractionAnalysisSection({
   );
 }
 
+function ReversibleWorkflowAnalysisSection({
+  analysis,
+}: {
+  analysis: ReversibleWorkflowAnalysis;
+}) {
+  return (
+    <section
+      aria-labelledby="reversible-workflow-analysis-heading"
+      className="border-line bg-panel space-y-3 rounded-2xl border p-5 shadow-sm sm:p-6"
+    >
+      <div>
+        <h3
+          id="reversible-workflow-analysis-heading"
+          className="text-sm font-semibold"
+        >
+          Reversible workflow checks
+        </h3>
+        <p className="text-muted mt-1 text-sm leading-relaxed">
+          Status: {analysisStatusLabel(analysis.status)}.
+        </p>
+      </div>
+      {analysis.status === "NOT_REQUESTED" ? (
+        <p className="text-sm leading-relaxed">
+          Reversible workflow analysis was not selected for this scan.
+        </p>
+      ) : (
+        <>
+          <dl className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="border-line rounded-xl border px-3 py-2">
+              <dt className="text-muted text-xs font-medium">Candidates</dt>
+              <dd className="text-lg font-semibold">
+                {analysis.discoveredReversibleCandidateCount}
+              </dd>
+            </div>
+            <div className="border-line rounded-xl border px-3 py-2">
+              <dt className="text-muted text-xs font-medium">Eligible</dt>
+              <dd className="text-lg font-semibold">
+                {analysis.eligibleWorkflowCount}
+              </dd>
+            </div>
+            <div className="border-line rounded-xl border px-3 py-2">
+              <dt className="text-muted text-xs font-medium">Attempted</dt>
+              <dd className="text-lg font-semibold">
+                {analysis.attemptedWorkflowCount}
+              </dd>
+            </div>
+            <div className="border-line rounded-xl border px-3 py-2">
+              <dt className="text-muted text-xs font-medium">Completed</dt>
+              <dd className="text-lg font-semibold">
+                {analysis.completedWorkflowCount}
+              </dd>
+            </div>
+            <div className="border-line rounded-xl border px-3 py-2">
+              <dt className="text-muted text-xs font-medium">
+                Successful reversals
+              </dt>
+              <dd className="text-lg font-semibold">
+                {analysis.successfulReversalCount}
+              </dd>
+            </div>
+            <div className="border-line rounded-xl border px-3 py-2">
+              <dt className="text-muted text-xs font-medium">Findings</dt>
+              <dd className="text-lg font-semibold">
+                {analysis.stateTransitionIssueCount}
+              </dd>
+            </div>
+            <div className="border-line rounded-xl border px-3 py-2">
+              <dt className="text-muted text-xs font-medium">Safety skips</dt>
+              <dd className="text-lg font-semibold">
+                {analysis.skippedUnsafeCount +
+                  analysis.skippedNetworkCount +
+                  analysis.skippedNavigationCount +
+                  analysis.skippedObstructionCount +
+                  analysis.skippedUnstableCount +
+                  analysis.skippedBusyCount}
+              </dd>
+            </div>
+          </dl>
+          {analysis.stateTransitionIssueCount === 0 ? (
+            <div className="space-y-2 text-sm leading-relaxed">
+              <p>
+                No reportable reversible-state findings were captured from the
+                controls that met the strict Phase 8 workflow requirements.
+              </p>
+              <p className="text-muted">
+                This does not prove that every workflow works. Only local
+                reversible controls with observable boolean state were eligible.
+              </p>
+            </div>
+          ) : null}
+        </>
+      )}
+      {analysis.notices.length > 0 ? (
+        <ul className="text-muted list-disc space-y-1 pl-5 text-sm">
+          {analysis.notices.map((notice) => (
+            <li key={notice}>{notice}</li>
+          ))}
+        </ul>
+      ) : null}
+    </section>
+  );
+}
+
 export default function BasicScanReport({ result }: { result: BasicScanResult }) {
   const headingRef = useRef<HTMLHeadingElement>(null);
   const diagnosticsRequested = result.diagnostics.status !== "NOT_REQUESTED";
@@ -407,12 +524,22 @@ export default function BasicScanReport({ result }: { result: BasicScanResult })
         screenshot={result.screenshot}
         mobileScreenshot={result.mobileScreenshot}
       />
-      <DiagnosticReport diagnostics={result.diagnostics} />
+      <DiagnosticReport
+        diagnostics={result.diagnostics}
+        evidenceArtifacts={result.issueEvidenceAnalysis.artifacts}
+      />
       <BrokenImageAnalysisSection analysis={result.brokenImageAnalysis} />
       <MobileLayoutAnalysisSection analysis={result.mobileLayoutAnalysis} />
       <AccessibilityAnalysisSection analysis={result.accessibilityAnalysis} />
       <SafeInteractionAnalysisSection
         analysis={result.safeInteractionAnalysis}
+      />
+      <ReversibleWorkflowAnalysisSection
+        analysis={result.reversibleWorkflowAnalysis}
+      />
+      <IssueEvidenceGallery
+        analysis={result.issueEvidenceAnalysis}
+        issues={result.diagnostics.issues}
       />
       <DeferredChecksNotice
         deferredChecks={result.deferredChecks}
@@ -425,7 +552,7 @@ export default function BasicScanReport({ result }: { result: BasicScanResult })
         <p className="text-muted mt-1 mb-3 text-sm leading-relaxed">
           The exported file contains navigation metadata and selected diagnostic
           findings from this scan. It does not include cookies, request bodies,
-          or response bodies.
+          response bodies, or screenshot binary data.
         </p>
         <ExportButton result={result} />
       </div>

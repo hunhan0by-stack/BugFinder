@@ -26,6 +26,17 @@ import {
   runSafeInteractionAnalysis,
 } from "@/lib/scanner/interaction/run-safe-interactions";
 import {
+  createEvidenceBudget,
+  emptyIssueEvidenceAnalysis,
+  captureClippedEvidence,
+} from "@/lib/scanner/evidence/capture-evidence";
+import {
+  emptyReversibleWorkflowAnalysis,
+  runReversibleWorkflows,
+} from "@/lib/scanner/workflow/run-reversible-workflows";
+import type { InteractionCandidate } from "@/lib/scanner/interaction/candidate-types";
+import { normalizeScanOptions } from "@/lib/utils/scan-options";
+import {
   createDiagnosticLimitsFromConfig,
   DiagnosticCollector,
 } from "@/lib/scanner/diagnostics/collector";
@@ -51,6 +62,7 @@ import {
 import type { DnsLookupFn } from "@/lib/security/dns-policy";
 import { RequestGuard } from "@/lib/security/request-guard";
 import { validateScanTarget } from "@/lib/security/target-policy";
+import { sanitizeDiagnosticUrl } from "@/lib/scanner/diagnostics/sanitize-url";
 import { redactUrl } from "@/lib/utils/redact-url";
 import type {
   AccessibilityAnalysis,
@@ -61,7 +73,9 @@ import type {
   DiagnosticCapabilityStatuses,
   DiagnosticIssue,
   DiagnosticResult,
+  IssueEvidenceAnalysis,
   MobileLayoutAnalysis,
+  ReversibleWorkflowAnalysis,
   SafeInteractionAnalysis,
   ScanOptions,
 } from "@/types/scan";
@@ -121,6 +135,12 @@ function buildExecutedCapabilities(
   if (options.safeInteractions) {
     capabilities.push("safeInteractionAnalysis");
   }
+  if (options.issueEvidence) {
+    capabilities.push("issueEvidenceAnalysis");
+  }
+  if (options.reversibleWorkflows) {
+    capabilities.push("reversibleWorkflowAnalysis");
+  }
   if (options.screenshots && desktopScreenshot) {
     capabilities.push("desktopScreenshot");
   }
@@ -128,6 +148,72 @@ function buildExecutedCapabilities(
     capabilities.push("mobileScreenshot");
   }
   return capabilities;
+}
+
+async function attachSelectorEvidence(input: {
+  budget: NonNullable<ReturnType<typeof createEvidenceBudget>>;
+  page: Page;
+  profile: "DESKTOP" | "MOBILE";
+  issues: DiagnosticIssue[];
+  scanRelativeMs: () => number;
+  kinds?: Partial<
+    Record<
+      DiagnosticIssue["type"],
+      "ELEMENT_SCREENSHOT" | "CONTEXT_SCREENSHOT"
+    >
+  >;
+}): Promise<void> {
+  const priority: DiagnosticIssue["type"][] = [
+    "STATE_TRANSITION_ISSUE",
+    "OBSTRUCTED_CONTROL",
+    "DEAD_CLICK",
+    "FORM_STATE_ISSUE",
+    "BROKEN_IMAGE",
+    "MOBILE_OVERFLOW",
+    "ACCESSIBILITY_VIOLATION",
+  ];
+  const sorted = [...input.issues].sort((a, b) => {
+    const pa = priority.indexOf(a.type);
+    const pb = priority.indexOf(b.type);
+    const rankA = pa === -1 ? 99 : pa;
+    const rankB = pb === -1 ? 99 : pb;
+    if (rankA !== rankB) return rankA - rankB;
+    return a.firstSeenMs - b.firstSeenMs;
+  });
+
+  for (const issue of sorted) {
+    if (issue.evidenceIds && issue.evidenceIds.length > 0) continue;
+    if (!priority.includes(issue.type)) continue;
+    const selector =
+      typeof issue.metadata.selector === "string"
+        ? issue.metadata.selector
+        : undefined;
+    if (!selector || selector.startsWith("orphan-submit:")) continue;
+    try {
+      const box = await input.page.locator(selector).first().boundingBox({
+        timeout: 1_000,
+      });
+      if (!box) {
+        input.budget.analysis.status = "PARTIAL";
+        continue;
+      }
+      const artifact = await captureClippedEvidence({
+        budget: input.budget,
+        page: input.page,
+        profile: input.profile,
+        kind: input.kinds?.[issue.type] ?? "CONTEXT_SCREENSHOT",
+        issueId: issue.id,
+        selector,
+        box,
+        scanRelativeMs: input.scanRelativeMs,
+      });
+      if (artifact) {
+        issue.evidenceIds = [...(issue.evidenceIds ?? []), artifact.id];
+      }
+    } catch {
+      input.budget.analysis.status = "PARTIAL";
+    }
+  }
 }
 
 function emptyScreenshot(reason: string): BasicScreenshotResult {
@@ -182,11 +268,18 @@ export async function runBasicScan(
   dependencies: BasicScanDependencies = {},
 ): Promise<BasicScanResult> {
   const config = dependencies.config ?? getScannerConfig();
+  const options = normalizeScanOptions(input.options);
   const now = dependencies.now ?? (() => new Date());
   const startedAtDate = now();
   const startedAt = startedAtDate.toISOString();
   const deadline = startedAtDate.getTime() + config.totalTimeoutMs;
   const scanMonotonicStart = performance.now();
+  let clicksUsed = 0;
+  const remainingClickBudget = () =>
+    Math.max(0, config.maxTotalActualClicks - clicksUsed);
+  const consumeClicks = (count: number) => {
+    clicksUsed += count;
+  };
 
   const release = scanLimiter.tryAcquire(config);
   let browser: Browser | null = null;
@@ -242,12 +335,12 @@ export async function runBasicScan(
     attachPageSafetyHandlers(page, notices);
 
     const phase5Requested =
-      input.options.consoleErrors || input.options.networkErrors;
+      options.consoleErrors || options.networkErrors;
 
     if (phase5Requested) {
       collector = new DiagnosticCollector({
-        collectConsoleErrors: input.options.consoleErrors,
-        collectNetworkErrors: input.options.networkErrors,
+        collectConsoleErrors: options.consoleErrors,
+        collectNetworkErrors: options.networkErrors,
         limits: createDiagnosticLimitsFromConfig(config),
         scanStartedAt: scanMonotonicStart,
         intentionalAborts: guard.intentionalAborts,
@@ -255,7 +348,7 @@ export async function runBasicScan(
       collector.attach(page);
     }
 
-    if (input.options.brokenImages) {
+    if (options.brokenImages) {
       imageObserver = new ImageOutcomeObserver(
         config,
         guard.intentionalAborts,
@@ -307,7 +400,7 @@ export async function runBasicScan(
     }
 
     let screenshot = emptyScreenshot("Screenshot capture was not requested.");
-    if (input.options.screenshots) {
+    if (options.screenshots) {
       createdScreenshotDir = true;
       ensureTimeRemaining();
       screenshot = await captureDesktopScreenshot(page, input.scanId, config);
@@ -335,6 +428,8 @@ export async function runBasicScan(
         mobileLayout: "NOT_REQUESTED",
         accessibility: "NOT_REQUESTED",
         safeInteractions: "NOT_REQUESTED",
+        issueEvidence: "NOT_REQUESTED",
+        reversibleWorkflows: "NOT_REQUESTED",
       },
       issues: [],
       severitySummary: { total: 0, high: 0, medium: 0, low: 0, info: 0 },
@@ -349,6 +444,7 @@ export async function runBasicScan(
         deadClicks: 0,
         obstructedControls: 0,
         formStateIssues: 0,
+        stateTransitionIssues: 0,
       },
       capturedEventCount: 0,
       groupedIssueCount: 0,
@@ -377,7 +473,7 @@ export async function runBasicScan(
 
     let brokenImageAnalysis: BrokenImageAnalysis = emptyBrokenImageAnalysis();
     let brokenImageIssues: DiagnosticIssue[] = [];
-    if (input.options.brokenImages) {
+    if (options.brokenImages) {
       ensureTimeRemaining();
       const broken = await analyzeBrokenImages({
         page,
@@ -397,7 +493,7 @@ export async function runBasicScan(
     let accessibilityAnalysis: AccessibilityAnalysis =
       emptyAccessibilityAnalysis();
     let accessibilityIssues: DiagnosticIssue[] = [];
-    if (input.options.accessibility) {
+    if (options.accessibility) {
       ensureTimeRemaining();
       const axe = await analyzeAccessibility({
         page,
@@ -421,7 +517,33 @@ export async function runBasicScan(
     let safeInteractionAnalysis: SafeInteractionAnalysis =
       emptySafeInteractionAnalysis();
     let safeInteractionIssues: DiagnosticIssue[] = [];
-    if (input.options.safeInteractions && page && browser) {
+    let interactionCandidates: InteractionCandidate[] = [];
+    let issueEvidenceAnalysis: IssueEvidenceAnalysis =
+      emptyIssueEvidenceAnalysis(
+        options.issueEvidence ? "COMPLETE" : "NOT_REQUESTED",
+      );
+    let reversibleWorkflowAnalysis: ReversibleWorkflowAnalysis =
+      emptyReversibleWorkflowAnalysis();
+    let reversibleWorkflowIssues: DiagnosticIssue[] = [];
+    const evidenceBudget = options.issueEvidence
+      ? createEvidenceBudget(input.scanId, config)
+      : null;
+
+    if (evidenceBudget && page) {
+      await attachSelectorEvidence({
+        budget: evidenceBudget,
+        page,
+        profile: "DESKTOP",
+        issues: [...brokenImageIssues, ...accessibilityIssues],
+        scanRelativeMs: relativeMs,
+        kinds: {
+          BROKEN_IMAGE: "CONTEXT_SCREENSHOT",
+          ACCESSIBILITY_VIOLATION: "ELEMENT_SCREENSHOT",
+        },
+      });
+    }
+
+    if ((options.safeInteractions || options.reversibleWorkflows) && page && browser) {
       ensureTimeRemaining();
       try {
         const interaction = await runSafeInteractionAnalysis({
@@ -433,18 +555,43 @@ export async function runBasicScan(
           lookupFn: dependencies.lookupFn,
           scanRelativeMs: relativeMs,
           ensureTimeRemaining,
+          remainingClickBudget,
+          consumeClicks,
+          evidenceBudget,
         });
-        safeInteractionAnalysis = interaction.analysis;
-        safeInteractionIssues = interaction.issues;
-        notices.push(...interaction.analysis.notices);
+        safeInteractionAnalysis = options.safeInteractions
+          ? interaction.analysis
+          : emptySafeInteractionAnalysis();
+        safeInteractionIssues = options.safeInteractions
+          ? interaction.issues
+          : [];
+        interactionCandidates = interaction.candidates;
+        notices.push(...(options.safeInteractions ? interaction.analysis.notices : []));
+
+        if (evidenceBudget && page && options.safeInteractions) {
+          await attachSelectorEvidence({
+            budget: evidenceBudget,
+            page,
+            profile: "DESKTOP",
+            issues: safeInteractionIssues,
+            scanRelativeMs: relativeMs,
+            kinds: {
+              OBSTRUCTED_CONTROL: "CONTEXT_SCREENSHOT",
+              DEAD_CLICK: "CONTEXT_SCREENSHOT",
+              FORM_STATE_ISSUE: "CONTEXT_SCREENSHOT",
+            },
+          });
+        }
       } catch {
-        safeInteractionAnalysis = emptySafeInteractionAnalysis("PARTIAL");
-        safeInteractionAnalysis.notices = [
-          "Safe interaction analysis could not complete for this page state.",
-        ];
-        notices.push(
-          "Desktop Phase 5–6 results were preserved after safe interaction analysis could not complete.",
-        );
+        if (options.safeInteractions) {
+          safeInteractionAnalysis = emptySafeInteractionAnalysis("PARTIAL");
+          safeInteractionAnalysis.notices = [
+            "Safe interaction analysis could not complete for this page state.",
+          ];
+          notices.push(
+            "Desktop Phase 5–6 results were preserved after safe interaction analysis could not complete.",
+          );
+        }
       }
     }
 
@@ -452,6 +599,49 @@ export async function runBasicScan(
     page = null;
     await closeQuietly(context);
     context = null;
+
+    if (options.reversibleWorkflows && browser) {
+      ensureTimeRemaining();
+      try {
+        const excluded = new Set(
+          safeInteractionIssues
+            .map((issue) =>
+              typeof issue.metadata.selector === "string"
+                ? issue.metadata.selector
+                : "",
+            )
+            .filter(Boolean),
+        );
+        const workflow = await runReversibleWorkflows({
+          browser,
+          targetHref: target.href,
+          candidates: interactionCandidates,
+          excludedSelectors: excluded,
+          config,
+          guard,
+          lookupFn: dependencies.lookupFn,
+          scanRelativeMs: relativeMs,
+          ensureTimeRemaining,
+          remainingClickBudget,
+          consumeClicks,
+          evidenceBudget,
+        });
+        reversibleWorkflowAnalysis = workflow.analysis;
+        reversibleWorkflowIssues = workflow.issues;
+        notices.push(...workflow.analysis.notices);
+      } catch {
+        reversibleWorkflowAnalysis = emptyReversibleWorkflowAnalysis("PARTIAL");
+        reversibleWorkflowAnalysis.notices = [
+          "Reversible workflow analysis could not complete for this page state.",
+        ];
+      }
+    } else if (!options.reversibleWorkflows) {
+      reversibleWorkflowAnalysis = emptyReversibleWorkflowAnalysis();
+    }
+
+    if (evidenceBudget) {
+      issueEvidenceAnalysis = evidenceBudget.analysis;
+    }
 
     let mobileLayoutAnalysis: MobileLayoutAnalysis = emptyMobileLayoutAnalysis(
       config,
@@ -461,7 +651,7 @@ export async function runBasicScan(
       "Mobile screenshot capture was not requested.",
     );
     const needsMobile =
-      input.options.mobileLayout || input.options.screenshots;
+      options.mobileLayout || options.screenshots;
 
     if (needsMobile && browser) {
       ensureTimeRemaining();
@@ -486,7 +676,7 @@ export async function runBasicScan(
           lookupFn: dependencies.lookupFn,
         });
 
-        if (input.options.mobileLayout) {
+        if (options.mobileLayout) {
           ensureTimeRemaining();
           const layout = await analyzeMobileLayout({
             page: mobilePage,
@@ -497,9 +687,21 @@ export async function runBasicScan(
           mobileLayoutAnalysis = layout.analysis;
           mobileLayoutIssues = layout.issues;
           notices.push(...layout.analysis.notices);
+          if (evidenceBudget && mobilePage) {
+            await attachSelectorEvidence({
+              budget: evidenceBudget,
+              page: mobilePage,
+              profile: "MOBILE",
+              issues: mobileLayoutIssues,
+              scanRelativeMs: relativeMs,
+              kinds: {
+                MOBILE_OVERFLOW: "CONTEXT_SCREENSHOT",
+              },
+            });
+          }
         }
 
-        if (input.options.screenshots) {
+        if (options.screenshots) {
           createdScreenshotDir = true;
           ensureTimeRemaining();
           mobileScreenshot = await captureMobileScreenshot(
@@ -514,13 +716,13 @@ export async function runBasicScan(
           }
         }
       } catch (mobileError) {
-        if (isScanError(mobileError) && !input.options.mobileLayout) {
+        if (isScanError(mobileError) && !options.mobileLayout) {
           // Screenshot-only mobile failure stays soft.
           notices.push(
             "Mobile screenshot capture could not complete for this scan.",
           );
           mobileScreenshot = {
-            requested: input.options.screenshots,
+            requested: options.screenshots,
             available: false,
             reason: "The mobile screenshot could not be created.",
           };
@@ -538,15 +740,15 @@ export async function runBasicScan(
           mobileLayoutAnalysis = {
             ...emptyMobileLayoutAnalysis(
               config,
-              input.options.mobileLayout ? "PARTIAL" : "NOT_REQUESTED",
+              options.mobileLayout ? "PARTIAL" : "NOT_REQUESTED",
             ),
-            notices: input.options.mobileLayout
+            notices: options.mobileLayout
               ? [
                   "Mobile layout analysis could not complete for this page state.",
                 ]
               : mobileLayoutAnalysis.notices,
           };
-          if (input.options.screenshots) {
+          if (options.screenshots) {
             mobileScreenshot = {
               requested: true,
               available: false,
@@ -572,23 +774,29 @@ export async function runBasicScan(
     }
 
     const capabilities: DiagnosticCapabilityStatuses = {
-      console: input.options.consoleErrors
+      console: options.consoleErrors
         ? phase5Diagnostics.capabilities.console
         : "NOT_REQUESTED",
-      network: input.options.networkErrors
+      network: options.networkErrors
         ? phase5Diagnostics.capabilities.network
         : "NOT_REQUESTED",
-      brokenImages: input.options.brokenImages
+      brokenImages: options.brokenImages
         ? brokenImageAnalysis.status
         : "NOT_REQUESTED",
-      mobileLayout: input.options.mobileLayout
+      mobileLayout: options.mobileLayout
         ? mobileLayoutAnalysis.status
         : "NOT_REQUESTED",
-      accessibility: input.options.accessibility
+      accessibility: options.accessibility
         ? accessibilityAnalysis.status
         : "NOT_REQUESTED",
-      safeInteractions: input.options.safeInteractions
+      safeInteractions: options.safeInteractions
         ? safeInteractionAnalysis.status
+        : "NOT_REQUESTED",
+      issueEvidence: options.issueEvidence
+        ? issueEvidenceAnalysis.status
+        : "NOT_REQUESTED",
+      reversibleWorkflows: options.reversibleWorkflows
+        ? reversibleWorkflowAnalysis.status
         : "NOT_REQUESTED",
     };
 
@@ -599,6 +807,7 @@ export async function runBasicScan(
         ...mobileLayoutIssues,
         ...accessibilityIssues,
         ...safeInteractionIssues,
+        ...reversibleWorkflowIssues,
       ],
       capabilities,
       extraNotices: [],
@@ -618,14 +827,23 @@ export async function runBasicScan(
       success: true,
       mode: "BASIC_SCAN",
       scanId: input.scanId,
-      targetUrl: target.href,
+      targetUrl: sanitizeDiagnosticUrl(
+        target.href,
+        config.maxDiagnosticUrlLength,
+      ),
       targetWasContacted: true,
       startedAt,
       completedAt,
       durationMs,
       page: {
-        requestedUrl: target.href,
-        finalUrl: navigation.finalUrl,
+        requestedUrl: sanitizeDiagnosticUrl(
+          target.href,
+          config.maxDiagnosticUrlLength,
+        ),
+        finalUrl: sanitizeDiagnosticUrl(
+          navigation.finalUrl,
+          config.maxDiagnosticUrlLength,
+        ),
         title: navigation.title,
         statusCode: navigation.statusCode,
         statusText: navigation.statusText,
@@ -639,10 +857,12 @@ export async function runBasicScan(
       mobileLayoutAnalysis,
       accessibilityAnalysis,
       safeInteractionAnalysis,
+      issueEvidenceAnalysis,
+      reversibleWorkflowAnalysis,
       executedCapabilities: buildExecutedCapabilities(
-        input.options,
-        input.options.screenshots,
-        input.options.screenshots && mobileScreenshot.requested,
+        options,
+        options.screenshots,
+        options.screenshots && mobileScreenshot.requested,
       ),
       deferredChecks: buildDeferredChecks(),
       security: {

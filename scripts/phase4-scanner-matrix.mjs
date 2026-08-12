@@ -19,6 +19,8 @@ const allTrue = {
   accessibility: true,
   screenshots: false,
   safeInteractions: false,
+  issueEvidence: false,
+  reversibleWorkflows: false,
 };
 
 const results = [];
@@ -95,6 +97,8 @@ try {
         accessibility: false,
         screenshots: false,
         safeInteractions: false,
+        issueEvidence: false,
+        reversibleWorkflows: false,
       },
     });
     return (
@@ -114,6 +118,8 @@ try {
         accessibility: false,
         screenshots: false,
         safeInteractions: false,
+        issueEvidence: false,
+        reversibleWorkflows: false,
       },
     });
     return (
@@ -134,6 +140,8 @@ try {
         accessibility: false,
         screenshots: false,
         safeInteractions: false,
+        issueEvidence: false,
+        reversibleWorkflows: false,
       },
     });
     return (

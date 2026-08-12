@@ -4,53 +4,47 @@ A beginner-friendly frontend quality assurance scanner.
 
 ## Current status
 
-**Phase 7 — Safe interaction, dead-click, obstruction, and form-state diagnostics.**
+**Phase 8 — Advanced controlled workflow & issue-specific evidence foundation.**
 
-Phases 1–6 are complete. Phase 7 keeps the secure single-page Chromium scanner
-and Phase 4–6 diagnostics, and adds bounded non-destructive interaction checks.
+Phases 1–7 are complete. Phase 8 keeps the secure single-page Chromium scanner
+and Phase 4–7 diagnostics, and adds bounded issue-specific evidence plus
+strictly limited reversible two-click workflows.
 
-## What Phase 7 does
+## What Phase 8 does
 
-- Discovers a bounded set of main-frame interaction candidates
-- Classifies each candidate conservatively for safety risk
-- Skips navigation, submission, reset, destructive, download, upload, payment,
-  account, authentication, and unknown-risk controls
-- Runs a Playwright trial click and DOM hit-testing for obstruction
-- Performs at most a small number of actual clicks (default 5)
-- Uses a **fresh isolated browser context for every actual click**
-- Blocks navigation, popups, downloads, file choosers, form submission, and
-  **all network requests** during the click observation window
-- Detects dead clicks, obstructed controls, and conservative form-state issues
+- Captures **issue-specific** PNG evidence when `issueEvidence` is selected
+- Stores evidence under `public/scan-results/{scanId}/evidence/` with safe IDs
+- Associates artifacts with issues via `evidenceIds` (no absolute paths, no base64)
+- Tests a small number of **local reversible** controls when
+  `reversibleWorkflows` is selected (at most two real pointer clicks per control)
+- Reuses Phase 7 safety: RequestGuard, zero-network gate, no navigation, no
+  form submission, no popups/downloads/file choosers, no force clicks
+- Reports `STATE_TRANSITION_ISSUE` when a proven reversible control fails to
+  restore baseline after the second click
 - Keeps all Phase 4 SSRF / private-network protections active in every context
 
-## How Phase 7 interaction findings are interpreted
+## How Phase 8 evidence should be interpreted
 
-- Only a small number of high-confidence safe controls are clicked.
-- Every actual click occurs in a fresh isolated session.
-- Controls requiring network or navigation are skipped, not labeled broken.
-- A dead-click finding requires a successful click with no observable local response.
-- A skipped control is not considered broken.
-- Obstruction checks cover controls visible in the initial viewport only.
-- Busy-state checks use a short bounded observation period.
-- No multi-step workflow is tested.
-- No form is submitted.
-- No authentication is performed.
-- No destructive action is allowed.
-- A zero-finding result does **not** prove that every control works.
+- Screenshots support findings but do **not** prove root cause.
+- Before/after screenshots are **not** pixel-diff analysis.
+- Evidence screenshots may contain **visible page content** near the affected
+  element; they are opt-in and privacy-sensitive.
+- Workflow success only covers the tested local reversible boolean state.
+- A successful reversal does **not** prove the entire application workflow works.
+- Unsupported controls are skipped; network-dependent actions remain excluded.
+- Zero findings do **not** prove the page is bug-free.
 
-## What Phase 7 does not do
+## What Phase 8 does not do
 
-- Anchor / link clicking or multi-page crawling
-- Typing into fields, password entry, or file upload
-- Form submission or form reset
-- Mobile interaction testing
-- Iframe or Shadow DOM interaction
-- Scrolling the page to discover more controls
-- Visual regression or issue-specific screenshots
-- Authentication or cookie/session import
-- Vulnerability testing
+- General crawling, link traversal, or multi-page workflows
+- Authentication, login, password entry, or form filling/submission
+- Payment, checkout, uploads, downloads-as-tests, or destructive actions
+- Mobile interaction workflows, iframe, or Shadow DOM interaction
+- More than two real clicks per workflow, or clicking a second distinct control
+- Visual baseline regression or screenshot pixel-diff scoring
+- AI-generated fixes or vulnerability scanning
 
-## Seven scan options
+## Nine scan options
 
 | Key | Behavior |
 | --- | --- |
@@ -61,8 +55,15 @@ and Phase 4–6 diagnostics, and adds bounded non-destructive interaction checks
 | `accessibility` | Desktop axe-core WCAG A/AA violations |
 | `screenshots` | Desktop `desktop.png` and mobile `mobile.png` |
 | `safeInteractions` | Bounded non-destructive desktop interaction checks |
+| `issueEvidence` | Bounded issue-specific PNG evidence for supported findings |
+| `reversibleWorkflows` | At most two-click reversible local toggle checks |
 
-`safeInteractions` defaults to **false**. It must be selected explicitly.
+`issueEvidence` and `reversibleWorkflows` default to **false**. They must be
+selected explicitly. Enabling `reversibleWorkflows` also enables
+`safeInteractions` (server-normalized and shown in the UI).
+
+`screenshots` (whole-page) and `issueEvidence` (clipped issue evidence) are
+independent. Issue evidence may run when whole-page screenshots are off.
 
 ## Stack
 
@@ -78,105 +79,34 @@ and Phase 4–6 diagnostics, and adds bounded non-destructive interaction checks
 
 - Node.js **20.9 or newer**
 - npm
-- Playwright Chromium: `npx playwright install chromium`
 
-## Environment
+## Setup
 
-Copy `.env.example` when needed. Important values:
-
-| Variable | Default | Notes |
-| --- | --- | --- |
-| `SCAN_PAGE_TIMEOUT_MS` | `30000` | Navigation timeout |
-| `SCAN_TOTAL_TIMEOUT_MS` | `90000` | Whole-scan deadline |
-| `SCAN_SCREENSHOT_TIMEOUT_MS` | `15000` | Screenshot timeout |
-| `SCAN_DIAGNOSTIC_SETTLE_MS` | `1000` | Post-load diagnostic settle |
-| `SCAN_MAX_DIAGNOSTIC_EVENTS` | `500` | Raw diagnostic event ceiling |
-| `SCAN_MAX_DIAGNOSTIC_ISSUES` | `100` | Grouped issue ceiling |
-| `SCAN_MAX_REDIRECTS` | `5` | Redirect ceiling |
-| `SCAN_MAX_REQUESTS` | `800` | Shared desktop + interaction + mobile request ceiling |
-| `SCAN_MAX_UNIQUE_HOSTS` | `40` | Distinct host ceiling |
-| `SCAN_MAX_CONCURRENT_SCANS` | `1` | In-process limiter |
-| `SCAN_ALLOWED_PORTS` | `80,443` | Public ports only by default |
-| `SCAN_INTERACTION_DISCOVERY_TIMEOUT_MS` | `5000` | Candidate discovery timeout |
-| `SCAN_INTERACTION_CONTEXT_TIMEOUT_MS` | `12000` | Per-click context budget |
-| `SCAN_INTERACTION_SETTLE_MS` | `1000` | Post-click observation window |
-| `SCAN_INTERACTION_PRECLICK_QUIET_MS` | `250` | Pre-click quiet window |
-| `SCAN_MAX_INTERACTION_CANDIDATES` | `100` | Discovery ceiling |
-| `SCAN_MAX_SAFE_CLICKS` | `5` | Actual click ceiling |
-| `SCAN_MAX_INTERACTION_ISSUES` | `50` | Interaction issue ceiling |
-| `ALLOW_LOCAL_FIXTURE` | `false` | **Never enable in production** |
-| `LOCAL_FIXTURE_HOST` | `127.0.0.1` | Exact test host only |
-| `LOCAL_FIXTURE_PORT` | `3100` | Exact test port only |
-
-Application-level SSRF checks reduce risk but do **not** replace an
-operating-system or container network sandbox.
-
-## Screenshot privacy
-
-Desktop and mobile screenshots are stored locally in this project’s
-`public/scan-results/` directory. Do not scan pages containing sensitive
-information unless you are authorized to store the resulting images. Do not
-upload screenshots to external services. Screenshots are scan-level evidence
-and are not automatically linked to each diagnostic finding. Automatic
-screenshot expiration is not implemented.
-
-## Installation
-
-```powershell
+```bash
 npm install
 npx playwright install chromium
-```
-
-## Development
-
-```powershell
+cp .env.example .env.local
 npm run dev
 ```
 
-Open the URL printed in the terminal (usually `http://localhost:3000`).
+Open [http://localhost:3000](http://localhost:3000).
 
-## Validation
+## Scripts
 
-```powershell
-npm run lint
-npm run typecheck
-npm test
-npm run build
-```
+| Command | Purpose |
+| --- | --- |
+| `npm run dev` | Development server |
+| `npm run build` | Production build |
+| `npm run start` | Production server |
+| `npm run lint` | ESLint |
+| `npm run typecheck` | TypeScript (`tsc --noEmit`) |
+| `npm test` | Unit + integration tests (local fixtures only) |
 
-Optional matrices (local fixture only — no public websites):
+## Example scan request
 
-```powershell
-node --experimental-strip-types --import ./tests/register-alias.mjs ./scripts/phase4-security-matrix.mjs
-node --experimental-strip-types --import ./tests/register-alias.mjs ./scripts/phase6-scanner-matrix.mjs
-node --experimental-strip-types --import ./tests/register-alias.mjs ./scripts/phase7-scanner-matrix.mjs
-node ./scripts/phase4-scanner-matrix.mjs
-node ./scripts/phase4-browser-matrix.mjs
-node ./scripts/phase5-browser-matrix.mjs
-node ./scripts/phase6-browser-matrix.mjs
-node ./scripts/phase7-api-matrix.mjs
-node ./scripts/phase7-browser-matrix.mjs
-```
-
-For API and browser matrices, start the app with fixture mode enabled (never in production):
-
-```powershell
-$env:ALLOW_LOCAL_FIXTURE="true"
-$env:LOCAL_FIXTURE_HOST="127.0.0.1"
-$env:LOCAL_FIXTURE_PORT="3100"
-npm run dev
-```
-
-Then disable fixture mode again for normal use.
-
-## Example request
-
-```http
-POST /api/scan
-Content-Type: application/json
-
+```json
 {
-  "url": "https://authorized-example.com",
+  "url": "https://example.com/",
   "options": {
     "consoleErrors": true,
     "networkErrors": true,
@@ -184,29 +114,33 @@ Content-Type: application/json
     "mobileLayout": true,
     "accessibility": true,
     "screenshots": true,
-    "safeInteractions": true
+    "safeInteractions": true,
+    "issueEvidence": true,
+    "reversibleWorkflows": true
   }
 }
 ```
 
-## Safety
+Legacy Phase 7 payloads that omit `issueEvidence` / `reversibleWorkflows` are
+accepted and treated as `false`.
 
-- Scan only websites you own or are authorized to test.
-- Default ports are **80** and **443** only.
-- Private and loopback targets are blocked unless the exact local fixture
-  exemption is enabled for tests.
-- Never enable `ALLOW_LOCAL_FIXTURE` in production.
-- Playwright and axe run only on the server.
+## Safety notes
+
+- Phase 4 private-network / SSRF protections remain mandatory.
 - Phase 7 prefers skipping an uncertain control over clicking it.
+- Phase 8 permits a second click only after a proven local reversible transition
+  with zero network/navigation/side effects.
+- Evidence filenames are server-generated; target text/URL never become paths.
+- Password and payment-field targets are skipped for issue evidence.
 
 ## Roadmap
 
 - [x] Phase 1: Foundation
 - [x] Phase 2: Main interface
 - [x] Phase 3: Types, validation, and mock API
-- [x] Phase 4: Basic Playwright scanner
-- [x] Phase 5: Console, page-error, and network diagnostics
-- [x] Phase 6: Broken images, mobile layout, mobile screenshots, and accessibility
+- [x] Phase 4: Basic Playwright scanner + URL/SSRF protections
+- [x] Phase 5: Console and network checks
+- [x] Phase 6: Frontend and accessibility checks
 - [x] Phase 7: Safe interaction, dead-click, button obstruction, and form-state diagnostics
-- [ ] Phase 8: Advanced controlled workflows, issue-specific evidence, or visual regression foundation
-- [ ] Phase 9: Testing and polish
+- [x] Phase 8: Advanced controlled workflows and issue-specific evidence foundation
+- [ ] Phase 9: Production hardening, deployment safety, retention, observability, final regression, and release readiness

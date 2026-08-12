@@ -134,6 +134,8 @@ describe("scanRequestSchema", () => {
         accessibility: false,
         screenshots: false,
         safeInteractions: false,
+        issueEvidence: false,
+        reversibleWorkflows: false,
       },
     });
     assert.equal(parsed.success, false);

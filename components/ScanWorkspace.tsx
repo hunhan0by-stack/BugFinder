@@ -63,7 +63,16 @@ export default function ScanWorkspace() {
   }
 
   function handleToggle(key: ScanOptionKey, checked: boolean) {
-    setOptions((previous) => ({ ...previous, [key]: checked }));
+    setOptions((previous) => {
+      const next = { ...previous, [key]: checked };
+      if (key === "reversibleWorkflows" && checked) {
+        next.safeInteractions = true;
+      }
+      if (key === "safeInteractions" && !checked) {
+        next.reversibleWorkflows = false;
+      }
+      return next;
+    });
     discardPreviousReport();
   }
 

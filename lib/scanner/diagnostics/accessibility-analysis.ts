@@ -104,6 +104,7 @@ export function buildAccessibilityIssuesFromViolations(input: {
       .filter((tag) => typeof tag === "string")
       .slice(0, 20)
       .join(", ");
+    const primarySelector = extractSafeAxeSelector(violation.nodes[0]?.target);
 
     issues.push({
       id: createId(),
@@ -147,6 +148,7 @@ export function buildAccessibilityIssuesFromViolations(input: {
         standards: tags || null,
         reportedNodeSampleCount: samples.length,
         omittedNodeCount: omitted,
+        ...(primarySelector ? { selector: primarySelector } : {}),
       },
     });
   }
@@ -263,6 +265,26 @@ function flattenTarget(target: unknown[] | undefined): string {
       return String(part);
     })
     .join(" ");
+}
+
+/** Bounded CSS-like axe target suitable for optional evidence capture. */
+function extractSafeAxeSelector(target: unknown[] | undefined): string | undefined {
+  if (!target || target.length === 0) return undefined;
+  const first = target[0];
+  if (typeof first !== "string") return undefined;
+  const trimmed = first.trim();
+  if (
+    trimmed.length === 0 ||
+    trimmed.length > 200 ||
+    trimmed.includes("<") ||
+    trimmed.includes(">") ||
+    trimmed.includes("..") ||
+    trimmed.includes("\0") ||
+    /password|cc-number|cc-csc|cc-exp/i.test(trimmed)
+  ) {
+    return undefined;
+  }
+  return trimmed;
 }
 
 function safeHelpUrl(raw: string | undefined): string | null {

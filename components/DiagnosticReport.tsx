@@ -1,6 +1,10 @@
 import DiagnosticFilters from "./DiagnosticFilters";
 import DiagnosticIssueCard from "./DiagnosticIssueCard";
-import type { DiagnosticResult, Severity } from "@/types/scan";
+import type {
+  DiagnosticEvidenceArtifact,
+  DiagnosticResult,
+  Severity,
+} from "@/types/scan";
 
 export { DiagnosticIssueCard };
 
@@ -12,8 +16,10 @@ function statusLabel(status: DiagnosticResult["status"]): string {
 
 export default function DiagnosticReport({
   diagnostics,
+  evidenceArtifacts = [],
 }: {
   diagnostics: DiagnosticResult;
+  evidenceArtifacts?: DiagnosticEvidenceArtifact[];
 }) {
   const counts = {
     ALL: diagnostics.issues.length,
@@ -93,7 +99,8 @@ export default function DiagnosticReport({
             {diagnostics.typeSummary.accessibilityViolations}, dead clicks{" "}
             {diagnostics.typeSummary.deadClicks}, obstructed{" "}
             {diagnostics.typeSummary.obstructedControls}, form-state{" "}
-            {diagnostics.typeSummary.formStateIssues}).
+            {diagnostics.typeSummary.formStateIssues}, state transitions{" "}
+            {diagnostics.typeSummary.stateTransitionIssues}).
           </p>
 
           {diagnostics.issues.length === 0 ? (
@@ -110,7 +117,11 @@ export default function DiagnosticReport({
               </p>
             </div>
           ) : (
-            <DiagnosticFilters issues={diagnostics.issues} counts={counts} />
+            <DiagnosticFilters
+              issues={diagnostics.issues}
+              counts={counts}
+              evidenceArtifacts={evidenceArtifacts}
+            />
           )}
         </>
       ) : null}

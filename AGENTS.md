@@ -71,6 +71,20 @@ accessibility violations). It is **not** a security scanner.
 - Do not implement mobile interactions before a later phase.
 - Run side-effect, security, fixture, and cleanup matrices after interaction changes.
 
+## Phase 8 rules
+
+- Evidence capture must be explicit (`issueEvidence` defaults false).
+- Never generate arbitrary filesystem paths from target data.
+- Evidence artifacts are PNG only; count and bytes are bounded.
+- Screenshots may contain visible target content — never claim they are text-free.
+- Never screenshot password/payment target fields for issue evidence.
+- Workflow candidates need observable reversible boolean state.
+- Maximum two real clicks per workflow; same logical control only.
+- Second click requires revalidation, trial click, and strict network gate.
+- RequestGuard remains active; no navigation, form submission, popup/download/file chooser.
+- No force click, no radio reversal, no tri-state workflow.
+- No Phase 9 (auth, DB, queues, crawling, pixel-diff, object storage).
+
 ## Workflow rules
 
 - Keep phases separate. Do not start the next phase without an explicit
@@ -91,6 +105,6 @@ accessibility violations). It is **not** a security scanner.
 4. Basic Playwright scanner (complete)
 5. Console and network checks (complete)
 6. Frontend and accessibility checks (complete)
-7. Safe interaction, dead-click, button obstruction, and form-state diagnostics (complete)
-8. Advanced controlled workflows / issue-specific evidence / visual regression foundation
-9. Testing and polish
+7. Safe interaction, dead-click, obstruction, and form-state diagnostics (complete)
+8. Advanced controlled workflow & issue-specific evidence (complete)
+9. Production hardening / testing and polish (not started)

@@ -156,9 +156,17 @@ export const scanOptionsSchema = z
     accessibility: z.boolean(),
     screenshots: z.boolean(),
     safeInteractions: z.boolean().optional().default(false),
+    issueEvidence: z.boolean().optional().default(false),
+    reversibleWorkflows: z.boolean().optional().default(false),
   })
   .refine((options) => Object.values(options).some((enabled) => enabled), {
     message: NO_OPTION_SELECTED_MESSAGE,
+  })
+  .transform((options) => {
+    if (options.reversibleWorkflows && !options.safeInteractions) {
+      return { ...options, safeInteractions: true };
+    }
+    return options;
   });
 
 export const scanRequestSchema = z.strictObject({

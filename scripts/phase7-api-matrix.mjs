@@ -68,6 +68,8 @@ try {
         accessibility: false,
         screenshots: false,
         safeInteractions: false,
+        issueEvidence: false,
+        reversibleWorkflows: false,
       },
     });
     return (

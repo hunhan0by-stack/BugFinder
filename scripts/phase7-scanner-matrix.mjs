@@ -59,6 +59,8 @@ const opts = (partial) => ({
   accessibility: false,
   screenshots: false,
   safeInteractions: false,
+  issueEvidence: false,
+  reversibleWorkflows: false,
   ...partial,
 });
 
@@ -155,6 +157,41 @@ try {
 
   await check("cleanup releases limiter after interaction scan", async () => {
     assert.equal(scanLimiter.getActiveCount(), 0);
+  });
+
+  await check("safe checkbox is responsive", async () => {
+    const result = await runBasicScan({
+      scanId: crypto.randomUUID(),
+      url: `${fixture.origin}/safe-checkbox`,
+      options: opts({ safeInteractions: true }),
+    });
+    assert.ok(result.safeInteractionAnalysis.responsiveControlCount >= 1);
+    assert.equal(result.diagnostics.typeSummary.deadClicks, 0);
+  });
+
+  await check("orphan submit produces FORM_STATE_ISSUE", async () => {
+    const result = await runBasicScan({
+      scanId: crypto.randomUUID(),
+      url: `${fixture.origin}/orphan-submit`,
+      options: opts({ safeInteractions: true }),
+    });
+    assert.ok(
+      result.diagnostics.issues.some(
+        (issue) =>
+          issue.type === "FORM_STATE_ISSUE" &&
+          issue.metadata.subtype === "ORPHANED_SUBMIT_CONTROL",
+      ),
+    );
+  });
+
+  await check("child icon button is not falsely obstructed", async () => {
+    const result = await runBasicScan({
+      scanId: crypto.randomUUID(),
+      url: `${fixture.origin}/child-icon-button`,
+      options: opts({ safeInteractions: true }),
+    });
+    assert.equal(result.diagnostics.typeSummary.obstructedControls, 0);
+    assert.ok(result.safeInteractionAnalysis.actualClickCount >= 1);
   });
 } finally {
   await fixture.close();

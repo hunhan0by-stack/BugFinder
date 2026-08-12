@@ -1,4 +1,4 @@
-import type { Browser, Page } from "playwright";
+import type { Browser, BrowserContext, Page } from "playwright";
 import type { ScannerConfig } from "@/lib/config/scanner-config";
 import {
   attachBrowserSafetyHandlers,
@@ -20,6 +20,12 @@ import { sanitizeDiagnosticUrl } from "@/lib/scanner/diagnostics/sanitize-url";
 import type { DnsLookupFn } from "@/lib/security/dns-policy";
 import { RequestGuard } from "@/lib/security/request-guard";
 import { validateScanTarget } from "@/lib/security/target-policy";
+import {
+  captureClipPngBuffer,
+  captureClippedEvidence,
+  writeEvidenceBuffer,
+  type EvidenceBudget,
+} from "@/lib/scanner/evidence/capture-evidence";
 import type {
   DiagnosticIssue,
   SafeInteractionAnalysis,
@@ -47,6 +53,7 @@ export function emptySafeInteractionAnalysis(
     skippedPopupCount: 0,
     skippedDownloadCount: 0,
     skippedOffscreenCount: 0,
+    skippedDisabledCount: 0,
     skippedUnstableCount: 0,
     skippedUnknownRiskCount: 0,
     candidateLimitReached: false,
@@ -78,8 +85,10 @@ function tallySkips(
   } else if (c === "SKIP_NETWORK_PRONE") analysis.skippedNetworkCount += 1;
   else if (c === "SKIP_DOWNLOAD" || c === "SKIP_FILE_UPLOAD") {
     analysis.skippedDownloadCount += 1;
-  } else if (c === "SKIP_OFFSCREEN") analysis.skippedOffscreenCount += 1;
-  else if (c === "SKIP_UNKNOWN_RISK") analysis.skippedUnknownRiskCount += 1;
+  }   else if (c === "SKIP_OFFSCREEN") analysis.skippedOffscreenCount += 1;
+  else if (c === "SKIP_DISABLED" || c === "SKIP_HIDDEN") {
+    analysis.skippedDisabledCount += 1;
+  } else if (c === "SKIP_UNKNOWN_RISK") analysis.skippedUnknownRiskCount += 1;
   else analysis.skippedUnsafeCount += 1;
 }
 
@@ -265,7 +274,14 @@ export async function runSafeInteractionAnalysis(input: {
   scanRelativeMs: () => number;
   ensureTimeRemaining: () => void;
   createId?: () => string;
-}): Promise<{ analysis: SafeInteractionAnalysis; issues: DiagnosticIssue[] }> {
+  remainingClickBudget?: () => number;
+  consumeClicks?: (count: number) => void;
+  evidenceBudget?: EvidenceBudget | null;
+}): Promise<{
+  analysis: SafeInteractionAnalysis;
+  issues: DiagnosticIssue[];
+  candidates: InteractionCandidate[];
+}> {
   const createId = input.createId ?? (() => crypto.randomUUID());
   const analysis = emptySafeInteractionAnalysis("COMPLETE");
   analysis.requested = true;
@@ -297,7 +313,7 @@ export async function runSafeInteractionAnalysis(input: {
     );
     analysis.status = "PARTIAL";
     analysis.notices = notices;
-    return { analysis, issues };
+    return { analysis, issues, candidates: discovered };
   }
 
   for (const candidate of discovered) {
@@ -326,8 +342,12 @@ export async function runSafeInteractionAnalysis(input: {
     issues,
   );
 
-  const toClick = eligible.slice(0, input.config.maxSafeClicks);
-  if (eligible.length > input.config.maxSafeClicks) {
+  const clickCap = Math.min(
+    input.config.maxSafeClicks,
+    input.remainingClickBudget ? input.remainingClickBudget() : input.config.maxSafeClicks,
+  );
+  const toClick = eligible.slice(0, clickCap);
+  if (eligible.length > clickCap) {
     analysis.clickLimitReached = true;
     notices.push(
       "Safe-click limit reached before every eligible control could be tested.",
@@ -347,8 +367,8 @@ export async function runSafeInteractionAnalysis(input: {
       break;
     }
 
-    let context = null;
-    let page = null;
+    let context: BrowserContext | null = null;
+    let page: Page | null = null;
     try {
       context = await createScanContext(input.browser);
       attachBrowserSafetyHandlers(context, notices);
@@ -424,6 +444,31 @@ export async function runSafeInteractionAnalysis(input: {
           },
         });
         analysis.obstructionIssueCount += 1;
+        if (input.evidenceBudget) {
+          const issue = issues[issues.length - 1];
+          if (issue) {
+            try {
+              const box = await locator.boundingBox({ timeout: 1_000 });
+              if (box) {
+                const artifact = await captureClippedEvidence({
+                  budget: input.evidenceBudget,
+                  page,
+                  profile: "DESKTOP",
+                  kind: "CONTEXT_SCREENSHOT",
+                  issueId: issue.id,
+                  selector: candidate.fingerprint.structuralSelector,
+                  box,
+                  scanRelativeMs: input.scanRelativeMs,
+                });
+                if (artifact) {
+                  issue.evidenceIds = [artifact.id];
+                }
+              }
+            } catch {
+              input.evidenceBudget.analysis.status = "PARTIAL";
+            }
+          }
+        }
         if (obstruction.kind === "full") {
           continue;
         }
@@ -460,11 +505,30 @@ export async function runSafeInteractionAnalysis(input: {
         continue;
       }
 
+      let beforeBox: { x: number; y: number; width: number; height: number } | null =
+        null;
+      let beforeCapture: Awaited<ReturnType<typeof captureClipPngBuffer>> = null;
+      if (input.evidenceBudget) {
+        try {
+          beforeBox = await locator.boundingBox({ timeout: 1_000 });
+          if (beforeBox) {
+            beforeCapture = await captureClipPngBuffer({
+              page,
+              box: beforeBox,
+              config: input.config,
+            });
+          }
+        } catch {
+          input.evidenceBudget.analysis.status = "PARTIAL";
+        }
+      }
+
       try {
         await locator.click({
           timeout: Math.min(5_000, input.config.interactionContextTimeoutMs),
         });
         analysis.actualClickCount += 1;
+        input.consumeClicks?.(1);
       } catch {
         analysis.skippedUnstableCount += 1;
         await gate.dispose();
@@ -512,12 +576,57 @@ export async function runSafeInteractionAnalysis(input: {
         continue;
       }
 
+      async function attachInteractionEvidence(
+        issue: DiagnosticIssue,
+      ): Promise<void> {
+        if (!input.evidenceBudget || !page) return;
+        const evidenceIds: string[] = [];
+        try {
+          if (beforeCapture) {
+            const beforeArtifact = await writeEvidenceBuffer({
+              budget: input.evidenceBudget,
+              profile: "DESKTOP",
+              kind: "BEFORE_INTERACTION",
+              issueId: issue.id,
+              selector: candidate.fingerprint.structuralSelector,
+              stateLabel: "BASELINE",
+              buffer: beforeCapture.buffer,
+              clip: beforeCapture.clip,
+              scanRelativeMs: input.scanRelativeMs,
+            });
+            if (beforeArtifact) evidenceIds.push(beforeArtifact.id);
+          }
+          const afterBox =
+            (await locator.boundingBox({ timeout: 1_000 }).catch(() => null)) ??
+            beforeBox;
+          if (afterBox) {
+            const afterArtifact = await captureClippedEvidence({
+              budget: input.evidenceBudget,
+              page,
+              profile: "DESKTOP",
+              kind: "AFTER_INTERACTION",
+              issueId: issue.id,
+              selector: candidate.fingerprint.structuralSelector,
+              stateLabel: "AFTER_FIRST_CLICK",
+              box: afterBox,
+              scanRelativeMs: input.scanRelativeMs,
+            });
+            if (afterArtifact) evidenceIds.push(afterArtifact.id);
+          }
+        } catch {
+          input.evidenceBudget.analysis.status = "PARTIAL";
+        }
+        if (evidenceIds.length > 0) {
+          issue.evidenceIds = evidenceIds;
+        }
+      }
+
       if (diff.stayedBusy || diff.stayedDisabled) {
         if (issues.length >= input.config.maxInteractionIssues) {
           analysis.issueLimitReached = true;
           continue;
         }
-        issues.push({
+        const formIssue: DiagnosticIssue = {
           id: createId(),
           type: "FORM_STATE_ISSUE",
           severity: "MEDIUM",
@@ -550,7 +659,9 @@ export async function runSafeInteractionAnalysis(input: {
               : "PERSISTENT_DISABLED_STATE",
             selector: candidate.fingerprint.structuralSelector,
           },
-        });
+        };
+        await attachInteractionEvidence(formIssue);
+        issues.push(formIssue);
         analysis.formStateIssueCount += 1;
         continue;
       }
@@ -559,7 +670,7 @@ export async function runSafeInteractionAnalysis(input: {
         analysis.issueLimitReached = true;
         continue;
       }
-      issues.push({
+      const deadClickIssue: DiagnosticIssue = {
         id: createId(),
         type: "DEAD_CLICK",
         severity: "MEDIUM",
@@ -593,7 +704,9 @@ export async function runSafeInteractionAnalysis(input: {
           role: candidate.fingerprint.role || null,
           tagName: candidate.fingerprint.tagName,
         },
-      });
+      };
+      await attachInteractionEvidence(deadClickIssue);
+      issues.push(deadClickIssue);
       analysis.deadClickIssueCount += 1;
     } catch {
       analysis.status = "PARTIAL";
@@ -646,5 +759,5 @@ export async function runSafeInteractionAnalysis(input: {
     (issue) => issue.type === "FORM_STATE_ISSUE",
   ).length;
 
-  return { analysis, issues };
+  return { analysis, issues, candidates: discovered };
 }

@@ -98,6 +98,22 @@ export type ScannerConfig = {
   maxInteractionControlledTargets: number;
   interactionObstructionTolerancePx: number;
   interactionMinVisibleAreaPx: number;
+  maxEvidenceArtifacts: number;
+  maxEvidenceBytes: number;
+  maxEvidencePerIssue: number;
+  evidenceContextPaddingPx: number;
+  evidenceMinWidthPx: number;
+  evidenceMinHeightPx: number;
+  evidenceMaxWidthPx: number;
+  evidenceMaxHeightPx: number;
+  evidenceScreenshotTimeoutMs: number;
+  maxReversibleWorkflows: number;
+  workflowSettleMs: number;
+  workflowContextTimeoutMs: number;
+  workflowStateCompareTolerancePx: number;
+  maxWorkflowMutations: number;
+  maxWorkflowIssues: number;
+  maxTotalActualClicks: number;
   allowLocalFixture: boolean;
   localFixtureHost: string;
   localFixturePort: number;
@@ -468,6 +484,118 @@ export function getScannerConfig(
       "SCAN_INTERACTION_MIN_VISIBLE_AREA_PX",
       1,
       10_000,
+    ),
+    maxEvidenceArtifacts: parsePositiveInt(
+      env.SCAN_MAX_EVIDENCE_ARTIFACTS,
+      12,
+      "SCAN_MAX_EVIDENCE_ARTIFACTS",
+      1,
+      50,
+    ),
+    maxEvidenceBytes: parsePositiveInt(
+      env.SCAN_MAX_EVIDENCE_BYTES,
+      8_000_000,
+      "SCAN_MAX_EVIDENCE_BYTES",
+      100_000,
+      25_000_000,
+    ),
+    maxEvidencePerIssue: parsePositiveInt(
+      env.SCAN_MAX_EVIDENCE_PER_ISSUE,
+      3,
+      "SCAN_MAX_EVIDENCE_PER_ISSUE",
+      1,
+      5,
+    ),
+    evidenceContextPaddingPx: parsePositiveInt(
+      env.SCAN_EVIDENCE_CONTEXT_PADDING_PX,
+      48,
+      "SCAN_EVIDENCE_CONTEXT_PADDING_PX",
+      0,
+      200,
+    ),
+    evidenceMinWidthPx: parsePositiveInt(
+      env.SCAN_EVIDENCE_MIN_WIDTH_PX,
+      64,
+      "SCAN_EVIDENCE_MIN_WIDTH_PX",
+      16,
+      500,
+    ),
+    evidenceMinHeightPx: parsePositiveInt(
+      env.SCAN_EVIDENCE_MIN_HEIGHT_PX,
+      48,
+      "SCAN_EVIDENCE_MIN_HEIGHT_PX",
+      16,
+      500,
+    ),
+    evidenceMaxWidthPx: parsePositiveInt(
+      env.SCAN_EVIDENCE_MAX_WIDTH_PX,
+      1_000,
+      "SCAN_EVIDENCE_MAX_WIDTH_PX",
+      100,
+      2_000,
+    ),
+    evidenceMaxHeightPx: parsePositiveInt(
+      env.SCAN_EVIDENCE_MAX_HEIGHT_PX,
+      800,
+      "SCAN_EVIDENCE_MAX_HEIGHT_PX",
+      100,
+      2_000,
+    ),
+    evidenceScreenshotTimeoutMs: parsePositiveInt(
+      env.SCAN_EVIDENCE_SCREENSHOT_TIMEOUT_MS,
+      4_000,
+      "SCAN_EVIDENCE_SCREENSHOT_TIMEOUT_MS",
+      500,
+      30_000,
+    ),
+    maxReversibleWorkflows: parsePositiveInt(
+      env.SCAN_MAX_REVERSIBLE_WORKFLOWS,
+      3,
+      "SCAN_MAX_REVERSIBLE_WORKFLOWS",
+      1,
+      10,
+    ),
+    workflowSettleMs: parsePositiveInt(
+      env.SCAN_WORKFLOW_SETTLE_MS,
+      1_000,
+      "SCAN_WORKFLOW_SETTLE_MS",
+      100,
+      5_000,
+    ),
+    workflowContextTimeoutMs: parsePositiveInt(
+      env.SCAN_WORKFLOW_CONTEXT_TIMEOUT_MS,
+      15_000,
+      "SCAN_WORKFLOW_CONTEXT_TIMEOUT_MS",
+      2_000,
+      60_000,
+    ),
+    workflowStateCompareTolerancePx: parsePositiveInt(
+      env.SCAN_WORKFLOW_STATE_COMPARE_TOLERANCE_PX,
+      2,
+      "SCAN_WORKFLOW_STATE_COMPARE_TOLERANCE_PX",
+      0,
+      20,
+    ),
+    maxWorkflowMutations: parsePositiveInt(
+      env.SCAN_MAX_WORKFLOW_MUTATIONS,
+      1_500,
+      "SCAN_MAX_WORKFLOW_MUTATIONS",
+      10,
+      10_000,
+    ),
+    maxWorkflowIssues: parsePositiveInt(
+      env.SCAN_MAX_WORKFLOW_ISSUES,
+      30,
+      "SCAN_MAX_WORKFLOW_ISSUES",
+      1,
+      100,
+    ),
+    maxTotalActualClicks: parsePositiveInt(
+      env.SCAN_MAX_TOTAL_ACTUAL_CLICKS,
+      12,
+      "SCAN_MAX_TOTAL_ACTUAL_CLICKS",
+      1,
+      30,
     ),
     allowLocalFixture: parseBoolean(env.ALLOW_LOCAL_FIXTURE, false),
     localFixtureHost,

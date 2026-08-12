@@ -81,6 +81,19 @@ export default function ScanOptionsFieldset({
                   >
                     {option.description}
                   </span>
+                  {option.warning ? (
+                    <span className="mt-1 block text-sm text-amber-800">
+                      {option.warning}
+                    </span>
+                  ) : null}
+                  {option.key === "reversibleWorkflows" &&
+                  value.reversibleWorkflows &&
+                  value.safeInteractions ? (
+                    <span className="text-muted mt-1 block text-sm">
+                      Safe interaction checks stay selected because reversible
+                      workflows reuse that safety infrastructure.
+                    </span>
+                  ) : null}
                 </span>
               </label>
             </li>

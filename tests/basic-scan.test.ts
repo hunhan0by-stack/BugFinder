@@ -59,6 +59,8 @@ describe("runBasicScan local fixture integration", { concurrency: 1 }, () => {
         accessibility: false,
         screenshots: false,
         safeInteractions: false,
+        issueEvidence: false,
+        reversibleWorkflows: false,
       },
     });
 
@@ -89,6 +91,8 @@ describe("runBasicScan local fixture integration", { concurrency: 1 }, () => {
         accessibility: false,
         screenshots: true,
         safeInteractions: false,
+        issueEvidence: false,
+        reversibleWorkflows: false,
       },
     });
 
@@ -137,6 +141,8 @@ describe("runBasicScan local fixture integration", { concurrency: 1 }, () => {
         accessibility: false,
         screenshots: false,
         safeInteractions: false,
+        issueEvidence: false,
+        reversibleWorkflows: false,
       },
     });
     assert.equal(result.page.finalUrl.endsWith("/ok"), true);
@@ -156,6 +162,8 @@ describe("runBasicScan local fixture integration", { concurrency: 1 }, () => {
           accessibility: false,
           screenshots: false,
         safeInteractions: false,
+        issueEvidence: false,
+        reversibleWorkflows: false,
         },
       });
       assert.fail("expected unsafe redirect failure");
@@ -184,6 +192,8 @@ describe("runBasicScan local fixture integration", { concurrency: 1 }, () => {
         accessibility: false,
         screenshots: false,
         safeInteractions: false,
+        issueEvidence: false,
+        reversibleWorkflows: false,
       },
     });
     assert.equal(result.success, true);
@@ -212,6 +222,8 @@ describe("runBasicScan local fixture integration", { concurrency: 1 }, () => {
           accessibility: false,
           screenshots: false,
         safeInteractions: false,
+        issueEvidence: false,
+        reversibleWorkflows: false,
         },
       });
       assert.fail("expected unsupported content type");
@@ -245,6 +257,8 @@ describe("runBasicScan local fixture integration", { concurrency: 1 }, () => {
             accessibility: false,
             screenshots: false,
         safeInteractions: false,
+        issueEvidence: false,
+        reversibleWorkflows: false,
           },
         },
         { config },
@@ -287,6 +301,8 @@ describe("runBasicScan local fixture integration", { concurrency: 1 }, () => {
         accessibility: false,
         screenshots: false,
         safeInteractions: false,
+        issueEvidence: false,
+        reversibleWorkflows: false,
       },
     });
 
@@ -304,6 +320,8 @@ describe("runBasicScan local fixture integration", { concurrency: 1 }, () => {
           accessibility: false,
           screenshots: false,
         safeInteractions: false,
+        issueEvidence: false,
+        reversibleWorkflows: false,
         },
       });
       assert.fail("expected SCAN_BUSY");
@@ -333,6 +351,8 @@ describe("runBasicScan local fixture integration", { concurrency: 1 }, () => {
         accessibility: false,
         screenshots: false,
         safeInteractions: false,
+        issueEvidence: false,
+        reversibleWorkflows: false,
       },
     });
     assert.equal(later.success, true);
@@ -351,6 +371,8 @@ describe("runBasicScan local fixture integration", { concurrency: 1 }, () => {
         accessibility: false,
         screenshots: false,
         safeInteractions: false,
+        issueEvidence: false,
+        reversibleWorkflows: false,
       },
     });
 
@@ -372,6 +394,8 @@ describe("runBasicScan local fixture integration", { concurrency: 1 }, () => {
           accessibility: false,
           screenshots: false,
         safeInteractions: false,
+        issueEvidence: false,
+        reversibleWorkflows: false,
         },
       },
       {
@@ -401,6 +425,8 @@ describe("runBasicScan local fixture integration", { concurrency: 1 }, () => {
           accessibility: false,
           screenshots: false,
         safeInteractions: false,
+        issueEvidence: false,
+        reversibleWorkflows: false,
         },
       },
       {
@@ -431,6 +457,8 @@ describe("runBasicScan local fixture integration", { concurrency: 1 }, () => {
           accessibility: false,
           screenshots: false,
         safeInteractions: false,
+        issueEvidence: false,
+        reversibleWorkflows: false,
         },
       },
       {
@@ -459,6 +487,8 @@ describe("runBasicScan local fixture integration", { concurrency: 1 }, () => {
           accessibility: false,
           screenshots: false,
         safeInteractions: false,
+        issueEvidence: false,
+        reversibleWorkflows: false,
         },
       },
       {
@@ -489,6 +519,8 @@ describe("runBasicScan local fixture integration", { concurrency: 1 }, () => {
           accessibility: false,
           screenshots: false,
         safeInteractions: false,
+        issueEvidence: false,
+        reversibleWorkflows: false,
         },
       },
       {
@@ -518,6 +550,8 @@ describe("runBasicScan local fixture integration", { concurrency: 1 }, () => {
         accessibility: false,
         screenshots: true,
         safeInteractions: false,
+        issueEvidence: false,
+        reversibleWorkflows: false,
       },
     });
     assert.equal(result.diagnostics.status, "NOT_REQUESTED");
@@ -545,6 +579,8 @@ describe("runBasicScan local fixture integration", { concurrency: 1 }, () => {
         accessibility: true,
         screenshots: false,
         safeInteractions: false,
+        issueEvidence: false,
+        reversibleWorkflows: false,
       },
     });
     assert.equal(result.brokenImageAnalysis.status, "COMPLETE");
@@ -569,6 +605,8 @@ describe("runBasicScan local fixture integration", { concurrency: 1 }, () => {
         accessibility: false,
         screenshots: false,
         safeInteractions: false,
+        issueEvidence: false,
+        reversibleWorkflows: false,
       },
     });
     const broken = result.diagnostics.issues.filter(
@@ -600,6 +638,8 @@ describe("runBasicScan local fixture integration", { concurrency: 1 }, () => {
         accessibility: false,
         screenshots: false,
         safeInteractions: false,
+        issueEvidence: false,
+        reversibleWorkflows: false,
       },
     });
     const broken = result.diagnostics.issues.filter(
@@ -621,6 +661,8 @@ describe("runBasicScan local fixture integration", { concurrency: 1 }, () => {
         accessibility: false,
         screenshots: false,
         safeInteractions: false,
+        issueEvidence: false,
+        reversibleWorkflows: false,
       },
     });
     assert.equal(
@@ -642,6 +684,8 @@ describe("runBasicScan local fixture integration", { concurrency: 1 }, () => {
         accessibility: false,
         screenshots: false,
         safeInteractions: false,
+        issueEvidence: false,
+        reversibleWorkflows: false,
       },
     });
     const overflow = result.diagnostics.issues.filter(
@@ -665,6 +709,8 @@ describe("runBasicScan local fixture integration", { concurrency: 1 }, () => {
         accessibility: false,
         screenshots: false,
         safeInteractions: false,
+        issueEvidence: false,
+        reversibleWorkflows: false,
       },
     });
     assert.ok(
@@ -684,6 +730,8 @@ describe("runBasicScan local fixture integration", { concurrency: 1 }, () => {
         accessibility: true,
         screenshots: false,
         safeInteractions: false,
+        issueEvidence: false,
+        reversibleWorkflows: false,
       },
     });
     const a11y = result.diagnostics.issues.filter(
@@ -709,6 +757,8 @@ describe("runBasicScan local fixture integration", { concurrency: 1 }, () => {
         accessibility: false,
         screenshots: false,
         safeInteractions: false,
+        issueEvidence: false,
+        reversibleWorkflows: false,
       },
     });
     assert.ok(result.security.blockedRequestCount > 0);
@@ -836,5 +886,103 @@ describe("runBasicScan local fixture integration", { concurrency: 1 }, () => {
         .length,
       0,
     );
+  });
+
+  it("toggles a safe checkbox without creating issues", async () => {
+    const result = await runBasicScan({
+      scanId: crypto.randomUUID(),
+      url: `${fixture.origin}/safe-checkbox`,
+      options: {
+        consoleErrors: false,
+        networkErrors: false,
+        brokenImages: false,
+        mobileLayout: false,
+        accessibility: false,
+        screenshots: false,
+        safeInteractions: true,
+      },
+    });
+    assert.ok(result.safeInteractionAnalysis.actualClickCount >= 1);
+    assert.ok(result.safeInteractionAnalysis.responsiveControlCount >= 1);
+    assert.equal(result.diagnostics.typeSummary.deadClicks, 0);
+  });
+
+  it("opens safe details without creating issues", async () => {
+    const result = await runBasicScan({
+      scanId: crypto.randomUUID(),
+      url: `${fixture.origin}/safe-details`,
+      options: {
+        consoleErrors: false,
+        networkErrors: false,
+        brokenImages: false,
+        mobileLayout: false,
+        accessibility: false,
+        screenshots: false,
+        safeInteractions: true,
+      },
+    });
+    assert.ok(result.safeInteractionAnalysis.actualClickCount >= 1);
+    assert.ok(result.safeInteractionAnalysis.responsiveControlCount >= 1);
+    assert.equal(result.diagnostics.typeSummary.deadClicks, 0);
+  });
+
+  it("skips offscreen controls without scrolling", async () => {
+    const result = await runBasicScan({
+      scanId: crypto.randomUUID(),
+      url: `${fixture.origin}/offscreen-safe`,
+      options: {
+        consoleErrors: false,
+        networkErrors: false,
+        brokenImages: false,
+        mobileLayout: false,
+        accessibility: false,
+        screenshots: false,
+        safeInteractions: true,
+      },
+    });
+    assert.ok(result.safeInteractionAnalysis.skippedOffscreenCount >= 1);
+    assert.equal(result.safeInteractionAnalysis.actualClickCount, 0);
+  });
+
+  it("skips destructive controls without clicking", async () => {
+    const result = await runBasicScan({
+      scanId: crypto.randomUUID(),
+      url: `${fixture.origin}/destructive-button`,
+      options: {
+        consoleErrors: false,
+        networkErrors: false,
+        brokenImages: false,
+        mobileLayout: false,
+        accessibility: false,
+        screenshots: false,
+        safeInteractions: true,
+      },
+    });
+    assert.ok(result.safeInteractionAnalysis.skippedDestructiveCount >= 1);
+    assert.equal(result.safeInteractionAnalysis.actualClickCount, 0);
+  });
+
+  it("reports orphan submit as FORM_STATE_ISSUE without clicking", async () => {
+    const result = await runBasicScan({
+      scanId: crypto.randomUUID(),
+      url: `${fixture.origin}/orphan-submit`,
+      options: {
+        consoleErrors: false,
+        networkErrors: false,
+        brokenImages: false,
+        mobileLayout: false,
+        accessibility: false,
+        screenshots: false,
+        safeInteractions: true,
+      },
+    });
+    assert.ok(
+      result.diagnostics.issues.some(
+        (issue) =>
+          issue.type === "FORM_STATE_ISSUE" &&
+          issue.metadata.subtype === "ORPHANED_SUBMIT_CONTROL",
+      ),
+    );
+    assert.equal(result.safeInteractionAnalysis.actualClickCount, 0);
   });
 });

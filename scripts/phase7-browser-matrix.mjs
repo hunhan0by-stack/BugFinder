@@ -34,6 +34,8 @@ async function runScan(page, url, optionIds) {
     "accessibility",
     "screenshots",
     "safeInteractions",
+    "issueEvidence",
+    "reversibleWorkflows",
   ]) {
     const locator = page.locator(`#scan-option-${id}`);
     const checked = await locator.isChecked();

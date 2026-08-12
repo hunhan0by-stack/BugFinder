@@ -63,6 +63,18 @@ function buildCapabilityRows(input: {
       ),
     },
     {
+      id: "issue-evidence",
+      label: "Issue-specific evidence",
+      status: diagnosticCapabilityStatusLabel(input.capabilities.issueEvidence),
+    },
+    {
+      id: "reversible-workflows",
+      label: "Reversible workflow checks",
+      status: diagnosticCapabilityStatusLabel(
+        input.capabilities.reversibleWorkflows,
+      ),
+    },
+    {
       id: "desktop-screenshot",
       label: "Desktop screenshot",
       status: screenshotCapabilityStatusLabel(input.screenshot),

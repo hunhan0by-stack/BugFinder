@@ -57,6 +57,8 @@ const opts = (partial) => ({
   accessibility: false,
   screenshots: false,
   safeInteractions: false,
+  issueEvidence: false,
+  reversibleWorkflows: false,
   ...partial,
 });
 

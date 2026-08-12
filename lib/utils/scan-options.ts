@@ -4,6 +4,7 @@ export type ScanOptionDefinition = {
   key: ScanOptionKey;
   label: string;
   description: string;
+  warning?: string;
 };
 
 export const SCAN_OPTION_DEFINITIONS: readonly ScanOptionDefinition[] = [
@@ -47,6 +48,22 @@ export const SCAN_OPTION_DEFINITIONS: readonly ScanOptionDefinition[] = [
     description:
       "Runs a small number of isolated, non-destructive button checks. Navigation, form submission, downloads, popups, and network requests are blocked.",
   },
+  {
+    key: "issueEvidence",
+    label: "Issue-specific evidence",
+    description:
+      "Captures bounded screenshots or before/after evidence for supported findings when a safe element target is available.",
+    warning:
+      "Evidence may include visible page content near the affected element.",
+  },
+  {
+    key: "reversibleWorkflows",
+    label: "Reversible workflow checks",
+    description:
+      "Tests a small number of local reversible controls with at most two isolated pointer clicks: one state change and one attempt to return to the original state.",
+    warning:
+      "Network access, navigation, form submission, downloads, popups, destructive actions, and uncertain controls remain blocked. Requires safe interaction checks.",
+  },
 ];
 
 export const SCAN_OPTION_KEYS: readonly ScanOptionKey[] =
@@ -61,6 +78,8 @@ export function setAllScanOptions(enabled: boolean): ScanOptions {
     accessibility: enabled,
     screenshots: enabled,
     safeInteractions: enabled,
+    issueEvidence: enabled,
+    reversibleWorkflows: enabled,
   };
 }
 
@@ -79,4 +98,12 @@ export function scanOptionLabel(key: ScanOptionKey): string {
     (candidate) => candidate.key === key,
   );
   return definition ? definition.label : key;
+}
+
+/** When reversible workflows are enabled, safe interactions must also be on. */
+export function normalizeScanOptions(options: ScanOptions): ScanOptions {
+  if (options.reversibleWorkflows && !options.safeInteractions) {
+    return { ...options, safeInteractions: true };
+  }
+  return options;
 }

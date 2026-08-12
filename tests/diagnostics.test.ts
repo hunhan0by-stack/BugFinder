@@ -160,6 +160,7 @@ describe("finalizeDiagnostics", () => {
       deadClicks: 0,
       obstructedControls: 0,
       formStateIssues: 0,
+      stateTransitionIssues: 0,
     });
     assert.deepEqual(result.capabilities, {
       console: "NOT_REQUESTED",
@@ -168,6 +169,8 @@ describe("finalizeDiagnostics", () => {
       mobileLayout: "NOT_REQUESTED",
       accessibility: "NOT_REQUESTED",
       safeInteractions: "NOT_REQUESTED",
+      issueEvidence: "NOT_REQUESTED",
+      reversibleWorkflows: "NOT_REQUESTED",
     });
   });
 

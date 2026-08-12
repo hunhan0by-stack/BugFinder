@@ -2,9 +2,9 @@ import { z } from "zod";
 import type { BasicScanResult, ScanErrorResponse } from "@/types/scan";
 
 const deferredCheckSchema = z.enum([
-  "advancedWorkflow",
-  "visualRegression",
   "authenticatedSession",
+  "visualBaselineRegression",
+  "scheduledScanning",
 ]);
 
 const diagnosticStatusSchema = z.enum([
@@ -91,12 +91,13 @@ const diagnosticIssueSchema = z
       "REQUEST_FAILED",
       "HTTP_ERROR",
       "BROKEN_IMAGE",
-      "DEAD_CLICK",
-      "OBSTRUCTED_CONTROL",
-      "FORM_STATE_ISSUE",
-      "MOBILE_OVERFLOW",
-      "MOBILE_VIEWPORT",
-      "ACCESSIBILITY_VIOLATION",
+    "DEAD_CLICK",
+    "STATE_TRANSITION_ISSUE",
+    "OBSTRUCTED_CONTROL",
+    "FORM_STATE_ISSUE",
+    "MOBILE_OVERFLOW",
+    "MOBILE_VIEWPORT",
+    "ACCESSIBILITY_VIOLATION",
     ]),
     severity: z.enum(["HIGH", "MEDIUM", "LOW", "INFO"]),
     confidence: z.number().int().min(0).max(100),
@@ -124,6 +125,7 @@ const diagnosticIssueSchema = z
       z.string(),
       z.union([z.string(), z.number(), z.boolean(), z.null()]),
     ),
+    evidenceIds: z.array(z.string().min(1).max(64)).max(5).optional(),
   })
   .superRefine((value, ctx) => {
     if (value.lastSeenMs < value.firstSeenMs) {
@@ -142,6 +144,8 @@ const diagnosticCapabilityStatusesSchema = z.strictObject({
   mobileLayout: diagnosticStatusSchema,
   accessibility: diagnosticStatusSchema,
   safeInteractions: diagnosticStatusSchema,
+  issueEvidence: diagnosticStatusSchema,
+  reversibleWorkflows: diagnosticStatusSchema,
 });
 
 const brokenImageAnalysisSchema = z.strictObject({
@@ -214,10 +218,75 @@ const safeInteractionAnalysisSchema = z.strictObject({
   skippedPopupCount: z.number().int().nonnegative(),
   skippedDownloadCount: z.number().int().nonnegative(),
   skippedOffscreenCount: z.number().int().nonnegative(),
+  skippedDisabledCount: z.number().int().nonnegative(),
   skippedUnstableCount: z.number().int().nonnegative(),
   skippedUnknownRiskCount: z.number().int().nonnegative(),
   candidateLimitReached: z.boolean(),
   clickLimitReached: z.boolean(),
+  mutationLimitReached: z.boolean(),
+  issueLimitReached: z.boolean(),
+  notices: z.array(z.string()),
+});
+
+const evidenceClipSchema = z.strictObject({
+  x: z.number().finite().nonnegative(),
+  y: z.number().finite().nonnegative(),
+  width: z.number().finite().positive(),
+  height: z.number().finite().positive(),
+});
+
+const diagnosticEvidenceArtifactSchema = z.strictObject({
+  id: z.string().min(1).max(64),
+  kind: z.enum([
+    "ELEMENT_SCREENSHOT",
+    "CONTEXT_SCREENSHOT",
+    "BEFORE_INTERACTION",
+    "AFTER_INTERACTION",
+    "AFTER_REVERSAL",
+  ]),
+  profile: z.enum(["DESKTOP", "MOBILE"]),
+  issueId: z.string().min(1).optional(),
+  relativePath: z.string().min(1),
+  publicUrl: z.string().min(1),
+  width: z.number().int().positive(),
+  height: z.number().int().positive(),
+  byteSize: z.number().int().nonnegative(),
+  capturedAtMs: z.number().nonnegative(),
+  selector: z.string().optional(),
+  clip: evidenceClipSchema.optional(),
+  stateLabel: z
+    .enum(["BASELINE", "AFTER_FIRST_CLICK", "AFTER_REVERSAL"])
+    .optional(),
+  truncated: z.boolean(),
+});
+
+const issueEvidenceAnalysisSchema = z.strictObject({
+  status: diagnosticStatusSchema,
+  requested: z.boolean(),
+  artifactCount: z.number().int().nonnegative(),
+  totalBytes: z.number().int().nonnegative(),
+  artifactLimitReached: z.boolean(),
+  byteLimitReached: z.boolean(),
+  artifacts: z.array(diagnosticEvidenceArtifactSchema).max(50),
+  notices: z.array(z.string()),
+});
+
+const reversibleWorkflowAnalysisSchema = z.strictObject({
+  status: diagnosticStatusSchema,
+  requested: z.boolean(),
+  discoveredReversibleCandidateCount: z.number().int().nonnegative(),
+  eligibleWorkflowCount: z.number().int().nonnegative(),
+  attemptedWorkflowCount: z.number().int().nonnegative(),
+  completedWorkflowCount: z.number().int().nonnegative(),
+  successfulReversalCount: z.number().int().nonnegative(),
+  stateTransitionIssueCount: z.number().int().nonnegative(),
+  skippedUnsafeCount: z.number().int().nonnegative(),
+  skippedNetworkCount: z.number().int().nonnegative(),
+  skippedNavigationCount: z.number().int().nonnegative(),
+  skippedObstructionCount: z.number().int().nonnegative(),
+  skippedUnstableCount: z.number().int().nonnegative(),
+  skippedBusyCount: z.number().int().nonnegative(),
+  workflowLimitReached: z.boolean(),
   mutationLimitReached: z.boolean(),
   issueLimitReached: z.boolean(),
   notices: z.array(z.string()),
@@ -246,6 +315,7 @@ const diagnosticResultSchema = z
       deadClicks: z.number().int().nonnegative(),
       obstructedControls: z.number().int().nonnegative(),
       formStateIssues: z.number().int().nonnegative(),
+      stateTransitionIssues: z.number().int().nonnegative(),
     }),
     capturedEventCount: z.number().int().nonnegative(),
     groupedIssueCount: z.number().int().nonnegative(),
@@ -299,6 +369,8 @@ export const basicScanResultSchema = z.strictObject({
   mobileLayoutAnalysis: mobileLayoutAnalysisSchema,
   accessibilityAnalysis: accessibilityAnalysisSchema,
   safeInteractionAnalysis: safeInteractionAnalysisSchema,
+  issueEvidenceAnalysis: issueEvidenceAnalysisSchema,
+  reversibleWorkflowAnalysis: reversibleWorkflowAnalysisSchema,
   executedCapabilities: z.array(z.string()),
   deferredChecks: z.array(deferredCheckSchema),
   security: scanSecuritySummarySchema,

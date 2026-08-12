@@ -16,7 +16,11 @@ export default function Home() {
       <div className="mx-auto flex w-full max-w-[1100px] flex-col gap-8 px-4 py-8 sm:px-6 sm:py-12">
         <ProductHeader />
 
-        <main id="main-content" className="flex flex-col gap-8">
+        <main
+          id="main-content"
+          tabIndex={-1}
+          className="flex flex-col gap-8 outline-none"
+        >
           <AuthorizedUseNotice />
 
           <ScanWorkspace />
@@ -26,8 +30,9 @@ export default function Home() {
 
         <footer className="border-line text-muted border-t pt-6 text-sm">
           <p>
-            Frontend Bug Finder — Phase 4 of 9. The basic Playwright scanner opens
-            one authorized page; diagnostic bug detection is not implemented yet.
+            Frontend Bug Finder — Phase 8 of 9. The scanner opens one authorized
+            page and runs selected diagnostics, optional safe interactions,
+            issue evidence, and reversible local workflows.
           </p>
           <p className="mt-1">
             Use only on websites you own or are authorized to test.
