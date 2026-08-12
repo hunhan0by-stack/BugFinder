@@ -8,7 +8,7 @@
     "start": "next start",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
-    "test": "node --experimental-strip-types --import ./tests/register-alias.mjs --test tests/url-validation.test.ts tests/url-validation-phase4.test.ts tests/ip-policy.test.ts tests/hostname-policy.test.ts tests/port-policy.test.ts tests/dns-policy.test.ts tests/scan-storage.test.ts tests/scan-response.test.ts tests/basic-scan.test.ts"
+    "test": "node --experimental-strip-types --import ./tests/register-alias.mjs --test tests/url-validation.test.ts tests/url-validation-phase4.test.ts tests/ip-policy.test.ts tests/hostname-policy.test.ts tests/port-policy.test.ts tests/dns-policy.test.ts tests/scan-storage.test.ts tests/scan-response.test.ts tests/diagnostics.test.ts tests/phase6-diagnostics.test.ts tests/phase7-interaction.test.ts tests/basic-scan.test.ts"
   },
   "dependencies": {
     "@axe-core/playwright": "^4.12.1",

@@ -27,8 +27,9 @@ export default function ScanOptionsFieldset({
     <fieldset aria-describedby={errorMessage ? ERROR_ID : undefined}>
       <legend className="text-sm font-semibold">Checks to include</legend>
       <p className="text-muted mt-1 text-sm">
-        Every selected check will run during a single visit to the page once real
-        scanning is available.
+        Selected checks run during this single-page visit, including console,
+        network, broken images, mobile layout, accessibility, screenshots, and
+        optional safe interaction checks.
       </p>
 
       <div className="mt-3 flex flex-wrap gap-2">
@@ -86,6 +87,11 @@ export default function ScanOptionsFieldset({
           );
         })}
       </ul>
+
+      <p className="text-muted mt-3 text-sm leading-relaxed">
+        Interaction coverage is intentionally limited. Controls that may cause
+        side effects are skipped rather than clicked.
+      </p>
 
       {errorMessage ? (
         <p

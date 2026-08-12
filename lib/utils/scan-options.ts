@@ -39,7 +39,13 @@ export const SCAN_OPTION_DEFINITIONS: readonly ScanOptionDefinition[] = [
   {
     key: "screenshots",
     label: "Screenshots",
-    description: "Capture desktop and mobile evidence during future scans.",
+    description: "Capture desktop and mobile evidence during the scan.",
+  },
+  {
+    key: "safeInteractions",
+    label: "Safe interaction checks",
+    description:
+      "Runs a small number of isolated, non-destructive button checks. Navigation, form submission, downloads, popups, and network requests are blocked.",
   },
 ];
 
@@ -54,6 +60,7 @@ export function setAllScanOptions(enabled: boolean): ScanOptions {
     mobileLayout: enabled,
     accessibility: enabled,
     screenshots: enabled,
+    safeInteractions: enabled,
   };
 }
 

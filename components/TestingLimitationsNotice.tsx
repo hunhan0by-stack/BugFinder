@@ -9,15 +9,15 @@ export default function TestingLimitationsNotice() {
       </h2>
 
       <p className="text-muted mt-3 leading-relaxed">
-        A successful Phase 4 result means Chromium opened the authorized page and
-        collected basic navigation metadata. It does not mean the website is
-        healthy, free of bugs, or ready for release.
+        A successful Phase 6 result means Chromium opened the authorized page and
+        collected the selected frontend diagnostics. It does not mean the website
+        is healthy, free of bugs, or ready for release.
       </p>
 
       <p className="text-muted mt-3 leading-relaxed">
-        Phase 4 does not inspect console errors, classify failed requests, detect
-        broken images, measure mobile overflow, or run accessibility analysis.
-        Those diagnostic checks arrive in later phases.
+        Phase 6 does not click through flows, fill forms, or prove every image
+        and layout state. Zero captured diagnostic findings does not prove the
+        page is bug-free.
       </p>
 
       <p className="text-muted mt-3 leading-relaxed">

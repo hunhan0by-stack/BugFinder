@@ -1,7 +1,11 @@
 import "server-only";
 
 import type { Browser, BrowserContext, Page } from "playwright";
-import { SCANNER_USER_AGENT } from "@/lib/scanner/browser";
+import type { ScannerConfig } from "@/lib/config/scanner-config";
+import {
+  MOBILE_SCANNER_USER_AGENT,
+  SCANNER_USER_AGENT,
+} from "@/lib/scanner/browser";
 
 export const DESKTOP_VIEWPORT = { width: 1366, height: 768 } as const;
 
@@ -22,8 +26,32 @@ export async function createScanContext(
   return context;
 }
 
+export async function createMobileScanContext(
+  browser: Browser,
+  config: ScannerConfig,
+): Promise<BrowserContext> {
+  const width = config.mobileViewportWidth;
+  const height = config.mobileViewportHeight;
+  const context = await browser.newContext({
+    viewport: { width, height },
+    screen: { width, height },
+    deviceScaleFactor: config.mobileDeviceScaleFactor,
+    isMobile: true,
+    hasTouch: true,
+    userAgent: MOBILE_SCANNER_USER_AGENT,
+    acceptDownloads: false,
+    ignoreHTTPSErrors: false,
+    javaScriptEnabled: true,
+    serviceWorkers: "block",
+    permissions: [],
+  });
+
+  context.setDefaultTimeout(30_000);
+  return context;
+}
+
 /**
- * Attaches handlers that keep Phase 4 non-interactive and non-blocking.
+ * Attaches handlers that keep scans non-interactive and non-blocking.
  */
 export function attachBrowserSafetyHandlers(
   context: BrowserContext,

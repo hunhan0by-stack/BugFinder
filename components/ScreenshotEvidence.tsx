@@ -1,27 +1,31 @@
 import Image from "next/image";
 import type { BasicScreenshotResult } from "@/types/scan";
 
-export default function ScreenshotEvidence({
+function ScreenshotPanel({
+  title,
   screenshot,
   hostname,
+  profileLabel,
 }: {
+  title: string;
   screenshot: BasicScreenshotResult;
   hostname: string;
+  profileLabel: "Desktop" | "Mobile";
 }) {
   return (
     <div className="border-line bg-panel rounded-2xl border p-5 shadow-sm sm:p-6">
-      <h3 className="text-sm font-semibold">Desktop screenshot</h3>
+      <h3 className="text-sm font-semibold">{title}</h3>
 
       {!screenshot.requested ? (
         <p className="text-muted mt-2 text-sm">
-          Desktop screenshot was not requested.
+          {profileLabel} screenshot was not requested.
         </p>
       ) : null}
 
       {screenshot.requested && !screenshot.available ? (
         <p className="text-muted mt-2 text-sm">
           {screenshot.reason ??
-            "The page opened successfully, but the desktop screenshot could not be created."}
+            `The page opened successfully, but the ${profileLabel.toLowerCase()} screenshot could not be created.`}
         </p>
       ) : null}
 
@@ -41,9 +45,11 @@ export default function ScreenshotEvidence({
           ) : null}
           <Image
             src={screenshot.publicUrl}
-            alt={`Desktop screenshot captured during the basic scan of ${hostname}`}
-            width={screenshot.width ?? 1366}
-            height={screenshot.height ?? 768}
+            alt={`${profileLabel} screenshot captured during the basic scan of ${hostname}`}
+            width={screenshot.width ?? (profileLabel === "Mobile" ? 390 : 1366)}
+            height={
+              screenshot.height ?? (profileLabel === "Mobile" ? 844 : 768)
+            }
             unoptimized
             className="border-line max-h-[480px] w-full rounded-xl border object-contain bg-neutral-50"
           />
@@ -63,6 +69,35 @@ export default function ScreenshotEvidence({
             you are authorized to store the resulting image.
           </p>
         </div>
+      ) : null}
+    </div>
+  );
+}
+
+export default function ScreenshotEvidence({
+  screenshot,
+  mobileScreenshot,
+  hostname,
+}: {
+  screenshot: BasicScreenshotResult;
+  mobileScreenshot?: BasicScreenshotResult;
+  hostname: string;
+}) {
+  return (
+    <div className="space-y-4">
+      <ScreenshotPanel
+        title="Desktop screenshot"
+        screenshot={screenshot}
+        hostname={hostname}
+        profileLabel="Desktop"
+      />
+      {mobileScreenshot ? (
+        <ScreenshotPanel
+          title="Mobile screenshot"
+          screenshot={mobileScreenshot}
+          hostname={hostname}
+          profileLabel="Mobile"
+        />
       ) : null}
     </div>
   );

@@ -53,7 +53,7 @@ try {
         (response) =>
           response.url().includes("/api/scan") && response.status() === 200,
       ),
-      page.getByRole("button", { name: /scan website|opening website/i }).click(),
+      page.getByRole("button", { name: /scan website|running basic scan|opening website/i }).click(),
     ]);
     await page.getByRole("heading", { name: "Basic scan result" }).waitFor({
       timeout: 60000,
@@ -61,7 +61,7 @@ try {
     await page.getByText("Fixture OK").first().waitFor({ timeout: 10000 });
     const body = await page.locator("body").innerText();
     return (
-      /Basic page scan completed/i.test(body) &&
+      (/Basic page scan completed|Basic scan and diagnostics completed/i.test(body)) &&
       /Target contacted/i.test(body) &&
       /Fixture OK/.test(body) &&
       !/No issues found/i.test(body) &&

@@ -155,6 +155,7 @@ export const scanOptionsSchema = z
     mobileLayout: z.boolean(),
     accessibility: z.boolean(),
     screenshots: z.boolean(),
+    safeInteractions: z.boolean().optional().default(false),
   })
   .refine((options) => Object.values(options).some((enabled) => enabled), {
     message: NO_OPTION_SELECTED_MESSAGE,

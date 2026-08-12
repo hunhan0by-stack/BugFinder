@@ -1,11 +1,23 @@
 import type { DeferredCheck, ScanSecuritySummary } from "@/types/scan";
 
 const DEFERRED_LABELS: Record<DeferredCheck, string> = {
-  consoleErrors: "Console and JavaScript diagnostics",
-  networkErrors: "Network and HTTP diagnostics",
-  brokenImages: "Broken image detection",
-  mobileLayout: "Mobile layout measurement",
-  accessibility: "Accessibility analysis",
+  advancedWorkflow: "Advanced controlled workflows",
+  visualRegression: "Visual regression foundation",
+  authenticatedSession: "Authenticated test sessions",
+};
+
+const CAPABILITY_LABELS: Record<string, string> = {
+  basicNavigation: "Basic navigation and metadata collection",
+  desktopScreenshot: "Desktop screenshot capture",
+  mobileScreenshot: "Mobile screenshot capture",
+  consoleErrorDiagnostics: "Console error diagnostics",
+  uncaughtExceptionDiagnostics: "Uncaught JavaScript exception diagnostics",
+  failedRequestDiagnostics: "Failed request diagnostics",
+  httpErrorResponseDiagnostics: "HTTP error response diagnostics",
+  brokenImageAnalysis: "Broken image analysis",
+  mobileLayoutAnalysis: "Mobile layout analysis",
+  accessibilityAnalysis: "Accessibility analysis",
+  safeInteractionAnalysis: "Safe interaction analysis",
 };
 
 export default function DeferredChecksNotice({
@@ -24,11 +36,7 @@ export default function DeferredChecksNotice({
         <ul className="mt-2 list-disc space-y-1 pl-5 text-sm">
           {executedCapabilities.map((capability) => (
             <li key={capability}>
-              {capability === "basicNavigation"
-                ? "Basic navigation and metadata collection"
-                : capability === "desktopScreenshot"
-                  ? "Desktop screenshot capture"
-                  : capability}
+              {CAPABILITY_LABELS[capability] ?? capability}
             </li>
           ))}
         </ul>
@@ -46,7 +54,7 @@ export default function DeferredChecksNotice({
           <>
             <p className="text-muted mt-2 text-sm leading-relaxed">
               These options were included in the requested configuration but were
-              not executed by the Phase 4 scanner.
+              not executed by the Phase 6 scanner.
             </p>
             <ul className="mt-2 list-disc space-y-1 pl-5 text-sm">
               {deferredChecks.map((check) => (

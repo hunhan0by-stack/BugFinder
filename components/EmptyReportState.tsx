@@ -25,11 +25,13 @@ export default function EmptyReportState() {
         <p className="mt-4 font-medium">No basic scan has been run yet</p>
         <p className="text-muted mx-auto mt-2 max-w-md text-sm leading-relaxed">
           Choose your checks and select <strong>Scan Website</strong> to open one
-          authorized page in Chromium and collect navigation metadata here.
+          authorized page in Chromium and collect navigation metadata and
+          selected diagnostics here.
         </p>
         <p className="text-muted mx-auto mt-3 max-w-md text-sm leading-relaxed">
-          Phase 4 confirms browser navigation only. Console, network, image,
-          mobile, and accessibility diagnostics are not enabled yet.
+          Phase 6 can report console errors, uncaught exceptions, failed
+          requests, HTTP error responses, broken images, mobile layout issues,
+          and accessibility violations when those options are selected.
         </p>
       </div>
     </section>

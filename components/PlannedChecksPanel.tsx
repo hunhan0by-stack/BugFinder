@@ -10,14 +10,19 @@ const reportContents = [
       "The document title plus the main response status and content type from the visit.",
   },
   {
-    title: "Timing and redirects",
+    title: "Console and network diagnostics",
     description:
-      "Controlled scanner measurements for navigation time, total processing time, and redirect count.",
+      "When selected, real console errors, uncaught exceptions, failed requests, and HTTP 4xx/5xx responses with conservative severity.",
   },
   {
-    title: "Desktop screenshot",
+    title: "Broken images, mobile layout, and accessibility",
     description:
-      "Optional evidence of the desktop viewport or full page, stored only under scan-results.",
+      "When selected, visible broken images, phone-width overflow, and axe-core accessibility findings from this page state.",
+  },
+  {
+    title: "Desktop and mobile screenshots",
+    description:
+      "Optional evidence of the desktop and mobile viewports or full page, stored only under scan-results.",
   },
 ];
 
@@ -31,8 +36,8 @@ export default function PlannedChecksPanel() {
         What a basic scan reports
       </h2>
       <p className="text-muted mt-1 text-sm">
-        Phase 4 opens one authorized page and returns navigation metadata. It
-        does not produce verified bug findings yet.
+        Phase 6 opens one authorized page and returns navigation metadata plus
+        the frontend diagnostics you selected.
       </p>
 
       <dl className="mt-5 space-y-4">
@@ -47,7 +52,7 @@ export default function PlannedChecksPanel() {
       </dl>
 
       <p className="border-line text-muted mt-6 border-t pt-4 text-sm leading-relaxed">
-        Selected diagnostic options stay listed as deferred until later phases.
+        Safe interaction, dead-click, and form-state checks remain deferred.
         JSON export includes the complete basic-scan result with{" "}
         <code className="font-mono text-xs">mode: &quot;BASIC_SCAN&quot;</code>.
       </p>

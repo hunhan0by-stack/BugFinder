@@ -133,6 +133,7 @@ describe("scanRequestSchema", () => {
         mobileLayout: false,
         accessibility: false,
         screenshots: false,
+        safeInteractions: false,
       },
     });
     assert.equal(parsed.success, false);

@@ -4,8 +4,10 @@ import type { Page } from "playwright";
 import type { ScannerConfig } from "@/lib/config/scanner-config";
 import { DESKTOP_VIEWPORT } from "@/lib/scanner/browser-context";
 import {
+  removeIncompleteMobileScreenshot,
   removeIncompleteScreenshot,
   writeDesktopScreenshot,
+  writeMobileScreenshot,
 } from "@/lib/scanner/scan-storage";
 import type { BasicScreenshotResult } from "@/types/scan";
 
@@ -67,7 +69,6 @@ export async function captureDesktopScreenshot(
         reason: "The page was too tall for a full-page capture.",
       };
     } catch {
-      // Fall back to viewport capture when full-page fails.
       if (useFullPage) {
         try {
           const buffer = await page.screenshot({
@@ -116,6 +117,96 @@ export async function captureDesktopScreenshot(
       requested: true,
       available: false,
       reason: "The desktop screenshot could not be created.",
+    };
+  }
+}
+
+export async function captureMobileScreenshot(
+  page: Page,
+  scanId: string,
+  config: ScannerConfig,
+): Promise<BasicScreenshotResult> {
+  const width = config.mobileViewportWidth;
+  const height = config.mobileViewportHeight;
+  try {
+    const scrollHeight = await measureScrollHeight(page);
+    const useFullPage = scrollHeight <= config.maxFullPageHeight;
+    const timeout = config.screenshotTimeoutMs;
+
+    try {
+      const buffer = await page.screenshot({
+        fullPage: useFullPage,
+        type: "png",
+        timeout,
+      });
+      if (buffer.byteLength === 0) {
+        await removeIncompleteMobileScreenshot(scanId);
+        return {
+          requested: true,
+          available: false,
+          reason: "The mobile screenshot could not be created.",
+        };
+      }
+      const written = await writeMobileScreenshot(scanId, buffer);
+      if (useFullPage) {
+        return {
+          requested: true,
+          available: true,
+          publicUrl: written.publicUrl,
+          captureMode: "FULL_PAGE",
+          width,
+          height: scrollHeight,
+        };
+      }
+      return {
+        requested: true,
+        available: true,
+        publicUrl: written.publicUrl,
+        captureMode: "VIEWPORT",
+        width,
+        height,
+        reason: "The page was too tall for a full-page capture.",
+      };
+    } catch {
+      try {
+        const buffer = await page.screenshot({
+          fullPage: false,
+          type: "png",
+          timeout,
+        });
+        if (buffer.byteLength === 0) {
+          await removeIncompleteMobileScreenshot(scanId);
+          return {
+            requested: true,
+            available: false,
+            reason: "The mobile screenshot could not be created.",
+          };
+        }
+        const written = await writeMobileScreenshot(scanId, buffer);
+        return {
+          requested: true,
+          available: true,
+          publicUrl: written.publicUrl,
+          captureMode: "VIEWPORT",
+          width,
+          height,
+          reason: "The page was too tall for a full-page capture.",
+        };
+      } catch {
+        await removeIncompleteMobileScreenshot(scanId);
+        return {
+          requested: true,
+          available: false,
+          reason: "The mobile screenshot could not be created.",
+        };
+      }
+    }
+  } catch {
+    await removeIncompleteMobileScreenshot(scanId);
+    return {
+      requested: true,
+      available: false,
+      reason: "The mobile screenshot could not be created.",
     };
   }
 }

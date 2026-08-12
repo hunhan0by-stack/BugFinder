@@ -51,8 +51,22 @@ export function getDesktopScreenshotPath(
   );
 }
 
+export function getMobileScreenshotPath(
+  scanId: string,
+  projectRoot: string = process.cwd(),
+): string {
+  return assertInsideScanResults(
+    path.join(getScanDirectory(scanId, projectRoot), "mobile.png"),
+    projectRoot,
+  );
+}
+
 export function getDesktopScreenshotPublicUrl(scanId: string): string {
   return `/scan-results/${scanId}/desktop.png`;
+}
+
+export function getMobileScreenshotPublicUrl(scanId: string): string {
+  return `/scan-results/${scanId}/mobile.png`;
 }
 
 export async function ensureScanDirectory(
@@ -79,11 +93,45 @@ export async function writeDesktopScreenshot(
   };
 }
 
+export async function writeMobileScreenshot(
+  scanId: string,
+  bytes: Buffer,
+  projectRoot: string = process.cwd(),
+): Promise<{ absolutePath: string; publicUrl: string; byteLength: number }> {
+  const absolutePath = getMobileScreenshotPath(scanId, projectRoot);
+  await ensureScanDirectory(scanId, projectRoot);
+  await writeFile(absolutePath, bytes);
+  return {
+    absolutePath,
+    publicUrl: getMobileScreenshotPublicUrl(scanId),
+    byteLength: bytes.byteLength,
+  };
+}
+
 export async function removeIncompleteScreenshot(
   scanId: string,
   projectRoot: string = process.cwd(),
 ): Promise<void> {
-  const absolutePath = getDesktopScreenshotPath(scanId, projectRoot);
+  for (const absolutePath of [
+    getDesktopScreenshotPath(scanId, projectRoot),
+    getMobileScreenshotPath(scanId, projectRoot),
+  ]) {
+    try {
+      const info = await stat(absolutePath);
+      if (info.size === 0) {
+        await rm(absolutePath, { force: true });
+      }
+    } catch {
+      // File may not exist.
+    }
+  }
+}
+
+export async function removeIncompleteMobileScreenshot(
+  scanId: string,
+  projectRoot: string = process.cwd(),
+): Promise<void> {
+  const absolutePath = getMobileScreenshotPath(scanId, projectRoot);
   try {
     const info = await stat(absolutePath);
     if (info.size === 0) {

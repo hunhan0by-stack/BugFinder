@@ -77,7 +77,7 @@ export default function ScanForm({
         aria-describedby={submitDescribedBy}
         className="bg-accent hover:bg-accent-hover focus-visible:ring-accent w-full rounded-xl px-4 py-2.5 font-semibold text-white transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
       >
-        {isPending ? "Opening Website…" : "Scan Website"}
+        {isPending ? "Running Basic Scan…" : "Scan Website"}
       </button>
     </form>
   );

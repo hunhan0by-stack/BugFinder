@@ -1,8 +1,9 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  // Playwright must stay a Node server dependency, not a bundled client module.
-  serverExternalPackages: ["playwright"],
+  // Playwright and axe must stay Node server dependencies so they share one
+  // Playwright runtime instance (required by @axe-core/playwright).
+  serverExternalPackages: ["playwright", "@axe-core/playwright", "axe-core"],
 };
 
 export default nextConfig;

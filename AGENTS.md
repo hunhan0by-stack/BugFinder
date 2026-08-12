@@ -33,7 +33,7 @@ accessibility violations). It is **not** a security scanner.
 
 - All scanner code must run on the server (route handlers or server-only
   modules under `lib/`).
-- Never import Playwright into a client component or any file with
+- Never import Playwright or axe into a client component or any file with
   `"use client"`.
 - Never render scanned HTML with `dangerouslySetInnerHTML`.
 - Never log cookies, authorization headers, passwords, tokens, or full query
@@ -41,20 +41,35 @@ accessibility violations). It is **not** a security scanner.
 - No security exploitation, no destructive browser interactions.
 - Only scan sites the user owns or is explicitly authorized to scan.
 
-## Phase 4 basic scanner
+## Phase 6 rules
 
-- Current completed phase is Phase 4 after successful validation.
-- `POST /api/scan` performs a real single-page Chromium visit with SSRF and
-  private-network protections.
-- Request-level network guards and redirect revalidation must remain active.
-- Private-network checks must not be bypassed to make a site load.
-- Do not set `ignoreHTTPSErrors` or `--disable-web-security`.
-- Browser resources must close in `finally` blocks.
-- `ALLOW_LOCAL_FIXTURE` is test-only. Never enable it in production. The
-  exemption is exact-host and exact-port only.
-- No console, network, broken-image, mobile, or accessibility issue detection
-  until later phases explicitly request it.
-- Results use `mode: "BASIC_SCAN"` and `diagnostics.status: "NOT_RUN"`.
+- Broken-image analysis covers visible `<img>` elements only.
+- Do not report unloaded lazy images without failure evidence.
+- Security-blocked image requests are not frontend issues.
+- Mobile analysis uses a separate secured context with the request guard.
+- Do not run Phase 5 console/network diagnostics twice in the mobile context.
+- Axe runs on the desktop page only in Phase 6.
+- Never return raw axe node HTML or the full target DOM.
+- Never claim WCAG compliance or full responsiveness.
+- Mobile and axe outputs must remain bounded.
+- Preserve the security guard in every browser context.
+
+## Phase 7 rules
+
+- Phase 7 is complete only after all tests pass.
+- Safety has priority over interaction coverage.
+- Only `safeInteractions` enables actual clicks; it defaults to false.
+- Every actual click uses a fresh isolated browser context with RequestGuard.
+- Never click links, submit/reset controls, file inputs, or text/password fields.
+- Never allow target network requests during click observation.
+- Never allow navigation, popups, downloads, or file-chooser actions from clicks.
+- Never type into target fields or collect form values / page text.
+- Never label skipped controls as dead.
+- Trial click must run before actual click.
+- Obstructed controls must not become dead-click issues.
+- Interaction limits must remain bounded.
+- Do not implement mobile interactions before a later phase.
+- Run side-effect, security, fixture, and cleanup matrices after interaction changes.
 
 ## Workflow rules
 
@@ -74,8 +89,8 @@ accessibility violations). It is **not** a security scanner.
 2. Main interface (complete)
 3. Types, validation, and mock API (complete)
 4. Basic Playwright scanner (complete)
-5. Console and network checks
-6. Frontend and accessibility checks
-7. URL and SSRF protections (foundation landed in Phase 4; expand later)
-8. Intentional local bug fixture
+5. Console and network checks (complete)
+6. Frontend and accessibility checks (complete)
+7. Safe interaction, dead-click, button obstruction, and form-state diagnostics (complete)
+8. Advanced controlled workflows / issue-specific evidence / visual regression foundation
 9. Testing and polish

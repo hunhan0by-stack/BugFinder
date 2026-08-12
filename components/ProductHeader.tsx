@@ -16,7 +16,7 @@ export default function ProductHeader() {
           <path d="m20 20-3.6-3.6" />
         </svg>
         <p className="text-xs font-semibold tracking-wide uppercase">
-          Frontend quality assurance — Phase 4: Basic scanner
+          Frontend quality assurance — Phase 6: Frontend checks
         </p>
       </div>
 
@@ -26,15 +26,15 @@ export default function ProductHeader() {
 
       <p className="text-muted mt-3 max-w-2xl leading-relaxed">
         Frontend Bug Finder opens one of your authorized web pages in Chromium
-        and will later report frontend problems a visitor would run into. It is a
+        and reports selected frontend problems a visitor could run into. It is a
         quality assurance tool, not a security scanner.
       </p>
 
       <p className="text-muted mt-3 max-w-2xl leading-relaxed">
         In this phase the scanner validates the target, opens a single page,
-        records navigation metadata, and can capture one desktop screenshot.
-        Console, network, image, mobile, and accessibility diagnostics are not
-        enabled yet.
+        collects selected console and network diagnostics, checks broken images,
+        mobile layout, and accessibility when enabled, and can capture desktop
+        and mobile screenshots.
       </p>
     </header>
   );

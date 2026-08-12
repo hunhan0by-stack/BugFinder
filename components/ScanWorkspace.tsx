@@ -144,8 +144,8 @@ export default function ScanWorkspace() {
             Configure a scan
           </h2>
           <p className="text-muted mt-1 text-sm">
-            Choose an authorized page to open and the checks you want once later
-            phases enable them.
+            Choose an authorized page to open and the frontend checks you want
+            to run on this visit.
           </p>
 
           <p
@@ -153,11 +153,11 @@ export default function ScanWorkspace() {
             className="border-line text-muted mt-4 rounded-xl border border-dashed px-4 py-3 text-sm"
           >
             <span className="text-foreground font-semibold">
-              Phase 4 basic scanner.
+              Phase 6 single-page frontend scanner.
             </span>{" "}
-            The scanner currently opens one authorized page, records navigation
-            metadata, and optionally captures one desktop screenshot. Diagnostic
-            checks will be added in later phases.
+            The scanner opens one authorized page, collects selected console,
+            network, broken-image, mobile layout, and accessibility diagnostics,
+            and optionally captures desktop and mobile screenshots.
           </p>
 
           <div className="mt-6">
@@ -185,7 +185,7 @@ export default function ScanWorkspace() {
           <div role="status" aria-live="polite">
             {isPending ? (
               <p className="border-line mt-4 rounded-xl border bg-neutral-50 px-4 py-3 text-sm">
-                Opening Website…
+                Running Basic Scan…
               </p>
             ) : null}
           </div>

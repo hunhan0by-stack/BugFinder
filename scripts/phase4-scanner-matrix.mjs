@@ -18,6 +18,7 @@ const allTrue = {
   mobileLayout: true,
   accessibility: true,
   screenshots: false,
+  safeInteractions: false,
 };
 
 const results = [];
@@ -77,9 +78,69 @@ try {
       json?.success === true &&
       json?.mode === "BASIC_SCAN" &&
       json?.targetWasContacted === true &&
-      json?.diagnostics?.status === "NOT_RUN" &&
+      json?.diagnostics?.status === "COMPLETE" &&
       Array.isArray(json?.diagnostics?.issues) &&
-      json.diagnostics.issues.length === 0
+      json.diagnostics.issues.length === 0 &&
+      json?.diagnostics?.severitySummary?.total === 0
+    );
+  });
+
+  await check("console fixture returns CONSOLE_ERROR", async () => {
+    const { response, json } = await post({
+      url: `${fixture.origin}/console-error`,
+      options: {
+        ...allTrue,
+        brokenImages: false,
+        mobileLayout: false,
+        accessibility: false,
+        screenshots: false,
+        safeInteractions: false,
+      },
+    });
+    return (
+      response.status === 200 &&
+      json?.diagnostics?.issues?.some((issue) => issue.type === "CONSOLE_ERROR")
+    );
+  });
+
+  await check("security-blocked subresource has no REQUEST_FAILED issue", async () => {
+    const { response, json } = await post({
+      url: `${fixture.origin}/blocked-subresource`,
+      options: {
+        consoleErrors: false,
+        networkErrors: true,
+        brokenImages: false,
+        mobileLayout: false,
+        accessibility: false,
+        screenshots: false,
+        safeInteractions: false,
+      },
+    });
+    return (
+      response.status === 200 &&
+      json?.security?.blockedRequestCount > 0 &&
+      !json?.diagnostics?.issues?.some((issue) => issue.type === "REQUEST_FAILED")
+    );
+  });
+
+  await check("multi fixture returns multiple diagnostic types", async () => {
+    const { response, json } = await post({
+      url: `${fixture.origin}/multi`,
+      options: {
+        consoleErrors: true,
+        networkErrors: true,
+        brokenImages: false,
+        mobileLayout: false,
+        accessibility: false,
+        screenshots: false,
+        safeInteractions: false,
+      },
+    });
+    return (
+      response.status === 200 &&
+      json?.diagnostics?.groupedIssueCount >= 3 &&
+      json?.diagnostics?.typeSummary?.consoleErrors >= 1 &&
+      json?.diagnostics?.typeSummary?.pageErrors >= 1
     );
   });
 

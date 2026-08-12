@@ -60,6 +60,44 @@ export type ScannerConfig = {
   maxFullPageHeight: number;
   dnsTimeoutMs: number;
   stabilizationMs: number;
+  diagnosticSettleMs: number;
+  maxDiagnosticEvents: number;
+  maxDiagnosticIssues: number;
+  maxConsoleMessageLength: number;
+  maxPageErrorMessageLength: number;
+  maxStackLength: number;
+  maxEvidenceLength: number;
+  maxDiagnosticUrlLength: number;
+  brokenImageTimeoutMs: number;
+  maxImageElements: number;
+  maxImageNetworkOutcomes: number;
+  maxBrokenImageIssues: number;
+  maxImageSelectorSamples: number;
+  mobileViewportWidth: number;
+  mobileViewportHeight: number;
+  mobileDeviceScaleFactor: number;
+  mobileAnalysisTimeoutMs: number;
+  maxLayoutElements: number;
+  maxMobileLayoutIssues: number;
+  layoutOverflowTolerancePx: number;
+  maxLayoutSelectorLength: number;
+  accessibilityTimeoutMs: number;
+  maxAccessibilityIssues: number;
+  maxAxeNodesPerRule: number;
+  maxAxeTargetLength: number;
+  maxAxeFailureSummaryLength: number;
+  interactionDiscoveryTimeoutMs: number;
+  interactionContextTimeoutMs: number;
+  interactionSettleMs: number;
+  interactionPreclickQuietMs: number;
+  maxInteractionCandidates: number;
+  maxSafeClicks: number;
+  maxInteractionIssues: number;
+  maxInteractionSelectorLength: number;
+  maxInteractionMutations: number;
+  maxInteractionControlledTargets: number;
+  interactionObstructionTolerancePx: number;
+  interactionMinVisibleAreaPx: number;
   allowLocalFixture: boolean;
   localFixtureHost: string;
   localFixturePort: number;
@@ -117,7 +155,7 @@ export function getScannerConfig(
     ),
     maxRequests: parsePositiveInt(
       env.SCAN_MAX_REQUESTS,
-      250,
+      800,
       "SCAN_MAX_REQUESTS",
       10,
       5_000,
@@ -164,6 +202,272 @@ export function getScannerConfig(
       "SCAN_STABILIZATION_MS",
       0,
       5_000,
+    ),
+    diagnosticSettleMs: parsePositiveInt(
+      env.SCAN_DIAGNOSTIC_SETTLE_MS,
+      1_000,
+      "SCAN_DIAGNOSTIC_SETTLE_MS",
+      0,
+      5_000,
+    ),
+    maxDiagnosticEvents: parsePositiveInt(
+      env.SCAN_MAX_DIAGNOSTIC_EVENTS,
+      500,
+      "SCAN_MAX_DIAGNOSTIC_EVENTS",
+      1,
+      5_000,
+    ),
+    maxDiagnosticIssues: parsePositiveInt(
+      env.SCAN_MAX_DIAGNOSTIC_ISSUES,
+      100,
+      "SCAN_MAX_DIAGNOSTIC_ISSUES",
+      1,
+      500,
+    ),
+    maxConsoleMessageLength: parsePositiveInt(
+      env.SCAN_MAX_CONSOLE_MESSAGE_LENGTH,
+      2_000,
+      "SCAN_MAX_CONSOLE_MESSAGE_LENGTH",
+      100,
+      10_000,
+    ),
+    maxPageErrorMessageLength: parsePositiveInt(
+      env.SCAN_MAX_PAGE_ERROR_MESSAGE_LENGTH,
+      2_000,
+      "SCAN_MAX_PAGE_ERROR_MESSAGE_LENGTH",
+      100,
+      10_000,
+    ),
+    maxStackLength: parsePositiveInt(
+      env.SCAN_MAX_STACK_LENGTH,
+      8_000,
+      "SCAN_MAX_STACK_LENGTH",
+      200,
+      30_000,
+    ),
+    maxEvidenceLength: parsePositiveInt(
+      env.SCAN_MAX_EVIDENCE_LENGTH,
+      4_000,
+      "SCAN_MAX_EVIDENCE_LENGTH",
+      200,
+      10_000,
+    ),
+    maxDiagnosticUrlLength: parsePositiveInt(
+      env.SCAN_MAX_DIAGNOSTIC_URL_LENGTH,
+      1_000,
+      "SCAN_MAX_DIAGNOSTIC_URL_LENGTH",
+      64,
+      4_000,
+    ),
+    brokenImageTimeoutMs: parsePositiveInt(
+      env.SCAN_BROKEN_IMAGE_TIMEOUT_MS,
+      5_000,
+      "SCAN_BROKEN_IMAGE_TIMEOUT_MS",
+      500,
+      60_000,
+    ),
+    maxImageElements: parsePositiveInt(
+      env.SCAN_MAX_IMAGE_ELEMENTS,
+      2_000,
+      "SCAN_MAX_IMAGE_ELEMENTS",
+      1,
+      10_000,
+    ),
+    maxImageNetworkOutcomes: parsePositiveInt(
+      env.SCAN_MAX_IMAGE_NETWORK_OUTCOMES,
+      2_000,
+      "SCAN_MAX_IMAGE_NETWORK_OUTCOMES",
+      1,
+      10_000,
+    ),
+    maxBrokenImageIssues: parsePositiveInt(
+      env.SCAN_MAX_BROKEN_IMAGE_ISSUES,
+      100,
+      "SCAN_MAX_BROKEN_IMAGE_ISSUES",
+      1,
+      500,
+    ),
+    maxImageSelectorSamples: parsePositiveInt(
+      env.SCAN_MAX_IMAGE_SELECTOR_SAMPLES,
+      3,
+      "SCAN_MAX_IMAGE_SELECTOR_SAMPLES",
+      1,
+      20,
+    ),
+    mobileViewportWidth: parsePositiveInt(
+      env.SCAN_MOBILE_VIEWPORT_WIDTH,
+      390,
+      "SCAN_MOBILE_VIEWPORT_WIDTH",
+      320,
+      2_048,
+    ),
+    mobileViewportHeight: parsePositiveInt(
+      env.SCAN_MOBILE_VIEWPORT_HEIGHT,
+      844,
+      "SCAN_MOBILE_VIEWPORT_HEIGHT",
+      480,
+      4_096,
+    ),
+    mobileDeviceScaleFactor: parsePositiveInt(
+      env.SCAN_MOBILE_DEVICE_SCALE_FACTOR,
+      1,
+      "SCAN_MOBILE_DEVICE_SCALE_FACTOR",
+      1,
+      3,
+    ),
+    mobileAnalysisTimeoutMs: parsePositiveInt(
+      env.SCAN_MOBILE_ANALYSIS_TIMEOUT_MS,
+      10_000,
+      "SCAN_MOBILE_ANALYSIS_TIMEOUT_MS",
+      1_000,
+      120_000,
+    ),
+    maxLayoutElements: parsePositiveInt(
+      env.SCAN_MAX_LAYOUT_ELEMENTS,
+      5_000,
+      "SCAN_MAX_LAYOUT_ELEMENTS",
+      1,
+      20_000,
+    ),
+    maxMobileLayoutIssues: parsePositiveInt(
+      env.SCAN_MAX_MOBILE_LAYOUT_ISSUES,
+      50,
+      "SCAN_MAX_MOBILE_LAYOUT_ISSUES",
+      1,
+      500,
+    ),
+    layoutOverflowTolerancePx: parsePositiveInt(
+      env.SCAN_LAYOUT_OVERFLOW_TOLERANCE_PX,
+      3,
+      "SCAN_LAYOUT_OVERFLOW_TOLERANCE_PX",
+      0,
+      50,
+    ),
+    maxLayoutSelectorLength: parsePositiveInt(
+      env.SCAN_MAX_LAYOUT_SELECTOR_LENGTH,
+      500,
+      "SCAN_MAX_LAYOUT_SELECTOR_LENGTH",
+      50,
+      2_000,
+    ),
+    accessibilityTimeoutMs: parsePositiveInt(
+      env.SCAN_ACCESSIBILITY_TIMEOUT_MS,
+      15_000,
+      "SCAN_ACCESSIBILITY_TIMEOUT_MS",
+      1_000,
+      120_000,
+    ),
+    maxAccessibilityIssues: parsePositiveInt(
+      env.SCAN_MAX_ACCESSIBILITY_ISSUES,
+      100,
+      "SCAN_MAX_ACCESSIBILITY_ISSUES",
+      1,
+      500,
+    ),
+    maxAxeNodesPerRule: parsePositiveInt(
+      env.SCAN_MAX_AXE_NODES_PER_RULE,
+      5,
+      "SCAN_MAX_AXE_NODES_PER_RULE",
+      1,
+      20,
+    ),
+    maxAxeTargetLength: parsePositiveInt(
+      env.SCAN_MAX_AXE_TARGET_LENGTH,
+      500,
+      "SCAN_MAX_AXE_TARGET_LENGTH",
+      50,
+      2_000,
+    ),
+    maxAxeFailureSummaryLength: parsePositiveInt(
+      env.SCAN_MAX_AXE_FAILURE_SUMMARY_LENGTH,
+      2_000,
+      "SCAN_MAX_AXE_FAILURE_SUMMARY_LENGTH",
+      100,
+      10_000,
+    ),
+    interactionDiscoveryTimeoutMs: parsePositiveInt(
+      env.SCAN_INTERACTION_DISCOVERY_TIMEOUT_MS,
+      5_000,
+      "SCAN_INTERACTION_DISCOVERY_TIMEOUT_MS",
+      500,
+      60_000,
+    ),
+    interactionContextTimeoutMs: parsePositiveInt(
+      env.SCAN_INTERACTION_CONTEXT_TIMEOUT_MS,
+      12_000,
+      "SCAN_INTERACTION_CONTEXT_TIMEOUT_MS",
+      1_000,
+      120_000,
+    ),
+    interactionSettleMs: parsePositiveInt(
+      env.SCAN_INTERACTION_SETTLE_MS,
+      1_000,
+      "SCAN_INTERACTION_SETTLE_MS",
+      100,
+      5_000,
+    ),
+    interactionPreclickQuietMs: parsePositiveInt(
+      env.SCAN_INTERACTION_PRECLICK_QUIET_MS,
+      250,
+      "SCAN_INTERACTION_PRECLICK_QUIET_MS",
+      0,
+      2_000,
+    ),
+    maxInteractionCandidates: parsePositiveInt(
+      env.SCAN_MAX_INTERACTION_CANDIDATES,
+      100,
+      "SCAN_MAX_INTERACTION_CANDIDATES",
+      1,
+      1_000,
+    ),
+    maxSafeClicks: parsePositiveInt(
+      env.SCAN_MAX_SAFE_CLICKS,
+      5,
+      "SCAN_MAX_SAFE_CLICKS",
+      1,
+      20,
+    ),
+    maxInteractionIssues: parsePositiveInt(
+      env.SCAN_MAX_INTERACTION_ISSUES,
+      50,
+      "SCAN_MAX_INTERACTION_ISSUES",
+      1,
+      200,
+    ),
+    maxInteractionSelectorLength: parsePositiveInt(
+      env.SCAN_MAX_INTERACTION_SELECTOR_LENGTH,
+      500,
+      "SCAN_MAX_INTERACTION_SELECTOR_LENGTH",
+      50,
+      2_000,
+    ),
+    maxInteractionMutations: parsePositiveInt(
+      env.SCAN_MAX_INTERACTION_MUTATIONS,
+      1_000,
+      "SCAN_MAX_INTERACTION_MUTATIONS",
+      10,
+      10_000,
+    ),
+    maxInteractionControlledTargets: parsePositiveInt(
+      env.SCAN_MAX_INTERACTION_CONTROLLED_TARGETS,
+      20,
+      "SCAN_MAX_INTERACTION_CONTROLLED_TARGETS",
+      1,
+      100,
+    ),
+    interactionObstructionTolerancePx: parsePositiveInt(
+      env.SCAN_INTERACTION_OBSTRUCTION_TOLERANCE_PX,
+      2,
+      "SCAN_INTERACTION_OBSTRUCTION_TOLERANCE_PX",
+      0,
+      20,
+    ),
+    interactionMinVisibleAreaPx: parsePositiveInt(
+      env.SCAN_INTERACTION_MIN_VISIBLE_AREA_PX,
+      16,
+      "SCAN_INTERACTION_MIN_VISIBLE_AREA_PX",
+      1,
+      10_000,
     ),
     allowLocalFixture: parseBoolean(env.ALLOW_LOCAL_FIXTURE, false),
     localFixtureHost,

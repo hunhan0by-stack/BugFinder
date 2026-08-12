@@ -42,6 +42,13 @@ export class RequestGuard {
     redirectCount: 0,
   };
 
+  /**
+   * Request objects intentionally aborted by scanner policy. Diagnostic
+   * collectors must check this WeakSet so security aborts are not reported as
+   * frontend REQUEST_FAILED issues.
+   */
+  readonly intentionalAborts = new WeakSet<Request>();
+
   private readonly hosts = new Set<string>();
   private readonly dnsCache = new Map<string, Promise<string[]>>();
   private failure: ScanError | null = null;
@@ -282,6 +289,8 @@ export class RequestGuard {
 
   private async handleRoute(route: Route): Promise<void> {
     if (this.failure) {
+      const request = route.request();
+      this.intentionalAborts.add(request);
       await route.abort("blockedbyclient");
       return;
     }
@@ -319,6 +328,7 @@ export class RequestGuard {
       this.fail(decision.code, message, hostname);
     }
 
+    this.intentionalAborts.add(request);
     await route.abort("blockedbyclient");
   }
 }
