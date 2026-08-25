@@ -56,7 +56,7 @@ export default function DeferredChecksNotice({
           <>
             <p className="text-muted mt-2 text-sm leading-relaxed">
               These options were included in the requested configuration but were
-              not executed by the Phase 8 scanner.
+              not executed by this release.
             </p>
             <ul className="mt-2 list-disc space-y-1 pl-5 text-sm">
               {deferredChecks.map((check) => (

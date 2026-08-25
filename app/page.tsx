@@ -30,7 +30,7 @@ export default function Home() {
 
         <footer className="border-line text-muted border-t pt-6 text-sm">
           <p>
-            Frontend Bug Finder — Phase 8 of 9. The scanner opens one authorized
+            Frontend Bug Finder — local release. The scanner opens one authorized
             page and runs selected diagnostics, optional safe interactions,
             issue evidence, and reversible local workflows.
           </p>

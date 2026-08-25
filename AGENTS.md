@@ -83,7 +83,20 @@ accessibility violations). It is **not** a security scanner.
 - Second click requires revalidation, trial click, and strict network gate.
 - RequestGuard remains active; no navigation, form submission, popup/download/file chooser.
 - No force click, no radio reversal, no tri-state workflow.
-- No Phase 9 (auth, DB, queues, crawling, pixel-diff, object storage).
+- No auth, DB, queues, crawling, pixel-diff, or object storage.
+
+## Phase 9 rules
+
+- Never weaken SSRF controls.
+- Never expose production fixture mode. `ALLOW_LOCAL_FIXTURE` cannot be true in production.
+- Never blindly run `npm audit fix --force`.
+- Never collect secret request or page values in logs or API JSON.
+- Retention may delete only validated scan artifact directories inside the scan-results root.
+- The HTTP rate limiter must remain bounded and is single-instance only.
+- Production tests must not contact arbitrary public sites.
+- Release requires an actual production build and `npm start` smoke test.
+- Do not claim completion without full validation.
+- Do not automatically deploy to the public internet.
 
 ## Workflow rules
 
@@ -107,4 +120,4 @@ accessibility violations). It is **not** a security scanner.
 6. Frontend and accessibility checks (complete)
 7. Safe interaction, dead-click, obstruction, and form-state diagnostics (complete)
 8. Advanced controlled workflow & issue-specific evidence (complete)
-9. Production hardening / testing and polish (not started)
+9. Production hardening / testing and polish (complete)

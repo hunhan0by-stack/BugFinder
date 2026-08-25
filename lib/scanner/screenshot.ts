@@ -9,7 +9,24 @@ import {
   writeDesktopScreenshot,
   writeMobileScreenshot,
 } from "@/lib/scanner/scan-storage";
+import { storageFailureNotice } from "@/lib/scanner/storage-errors";
 import type { BasicScreenshotResult } from "@/types/scan";
+
+function screenshotFailureResult(
+  kind: "desktop" | "mobile",
+  error?: unknown,
+): BasicScreenshotResult {
+  const storageNotice = error ? storageFailureNotice(error) : null;
+  return {
+    requested: true,
+    available: false,
+    reason:
+      storageNotice ??
+      (kind === "desktop"
+        ? "The desktop screenshot could not be created."
+        : "The mobile screenshot could not be created."),
+  };
+}
 
 async function measureScrollHeight(page: Page): Promise<number> {
   return page.evaluate(() => {
@@ -68,7 +85,11 @@ export async function captureDesktopScreenshot(
         height: DESKTOP_VIEWPORT.height,
         reason: "The page was too tall for a full-page capture.",
       };
-    } catch {
+    } catch (error) {
+      if (storageFailureNotice(error)) {
+        await removeIncompleteScreenshot(scanId);
+        return screenshotFailureResult("desktop", error);
+      }
       if (useFullPage) {
         try {
           const buffer = await page.screenshot({
@@ -94,30 +115,18 @@ export async function captureDesktopScreenshot(
             height: DESKTOP_VIEWPORT.height,
             reason: "The page was too tall for a full-page capture.",
           };
-        } catch {
+        } catch (error) {
           await removeIncompleteScreenshot(scanId);
-          return {
-            requested: true,
-            available: false,
-            reason: "The desktop screenshot could not be created.",
-          };
+          return screenshotFailureResult("desktop", error);
         }
       }
 
       await removeIncompleteScreenshot(scanId);
-      return {
-        requested: true,
-        available: false,
-        reason: "The desktop screenshot could not be created.",
-      };
+      return screenshotFailureResult("desktop");
     }
-  } catch {
+  } catch (error) {
     await removeIncompleteScreenshot(scanId);
-    return {
-      requested: true,
-      available: false,
-      reason: "The desktop screenshot could not be created.",
-    };
+    return screenshotFailureResult("desktop", error);
   }
 }
 
@@ -167,7 +176,11 @@ export async function captureMobileScreenshot(
         height,
         reason: "The page was too tall for a full-page capture.",
       };
-    } catch {
+    } catch (error) {
+      if (storageFailureNotice(error)) {
+        await removeIncompleteMobileScreenshot(scanId);
+        return screenshotFailureResult("mobile", error);
+      }
       try {
         const buffer = await page.screenshot({
           fullPage: false,
@@ -176,11 +189,7 @@ export async function captureMobileScreenshot(
         });
         if (buffer.byteLength === 0) {
           await removeIncompleteMobileScreenshot(scanId);
-          return {
-            requested: true,
-            available: false,
-            reason: "The mobile screenshot could not be created.",
-          };
+          return screenshotFailureResult("mobile");
         }
         const written = await writeMobileScreenshot(scanId, buffer);
         return {
@@ -192,21 +201,13 @@ export async function captureMobileScreenshot(
           height,
           reason: "The page was too tall for a full-page capture.",
         };
-      } catch {
+      } catch (fallbackError) {
         await removeIncompleteMobileScreenshot(scanId);
-        return {
-          requested: true,
-          available: false,
-          reason: "The mobile screenshot could not be created.",
-        };
+        return screenshotFailureResult("mobile", fallbackError);
       }
     }
-  } catch {
+  } catch (error) {
     await removeIncompleteMobileScreenshot(scanId);
-    return {
-      requested: true,
-      available: false,
-      reason: "The mobile screenshot could not be created.",
-    };
+    return screenshotFailureResult("mobile", error);
   }
 }

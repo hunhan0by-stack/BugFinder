@@ -74,6 +74,8 @@ export const SCAN_ERROR_MESSAGES = {
   RESOURCE_LIMIT_EXCEEDED:
     "The page created too many network requests for this basic scan.",
   SCAN_BUSY: "Another scan is currently running. Try again after it finishes.",
+  RATE_LIMITED: "Too many scan requests. Try again shortly.",
+  METHOD_NOT_ALLOWED: "This endpoint only accepts POST requests.",
   BROWSER_UNAVAILABLE:
     "Chromium could not start. Confirm that the Playwright browser is installed.",
   NAVIGATION_TIMEOUT: "The page took too long to open.",

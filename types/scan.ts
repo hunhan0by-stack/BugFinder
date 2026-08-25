@@ -28,7 +28,7 @@ export type ScanRequestInput = {
   options: ScanOptions;
 };
 
-/** Reserved for Phase 9+ deferred capabilities. Phase 8 returns []. */
+/** Reserved for capabilities that are not part of this release. Phase 9 returns []. */
 export type DeferredCheck =
   | "authenticatedSession"
   | "visualBaselineRegression"
@@ -375,6 +375,8 @@ export type ScanErrorCode =
   | "REDIRECT_LIMIT_EXCEEDED"
   | "RESOURCE_LIMIT_EXCEEDED"
   | "SCAN_BUSY"
+  | "RATE_LIMITED"
+  | "METHOD_NOT_ALLOWED"
   | "BROWSER_UNAVAILABLE"
   | "NAVIGATION_TIMEOUT"
   | "SCAN_TIMEOUT"

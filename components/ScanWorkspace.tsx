@@ -162,11 +162,11 @@ export default function ScanWorkspace() {
             className="border-line text-muted mt-4 rounded-xl border border-dashed px-4 py-3 text-sm"
           >
             <span className="text-foreground font-semibold">
-              Phase 6 single-page frontend scanner.
+              Single-page frontend scanner.
             </span>{" "}
-            The scanner opens one authorized page, collects selected console,
-            network, broken-image, mobile layout, and accessibility diagnostics,
-            and optionally captures desktop and mobile screenshots.
+            The scanner opens one authorized page and runs the checks you
+            select, including optional screenshots, safe interactions, issue
+            evidence, and reversible local workflows.
           </p>
 
           <div className="mt-6">

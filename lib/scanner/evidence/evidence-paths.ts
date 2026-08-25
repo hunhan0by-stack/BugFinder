@@ -4,6 +4,7 @@ import path from "node:path";
 import {
   assertInsideScanResults,
   getScanDirectory,
+  isSafeScanId,
 } from "@/lib/scanner/scan-storage";
 
 const EVIDENCE_ID_PATTERN = /^ev_[0-9a-f]{8}_[0-9a-f]{4}_[0-9a-f]{4}_[0-9a-f]{4}_[0-9a-f]{12}$/i;
@@ -67,7 +68,7 @@ export function getEvidenceRelativePath(
   if (!isSafeEvidenceId(evidenceId)) {
     throw new Error("Unsafe evidence identifier rejected.");
   }
-  if (!/^[0-9a-fA-F-]{36}$/.test(scanId)) {
+  if (!isSafeScanId(scanId)) {
     throw new Error("Evidence relative path requires a UUID scan id.");
   }
   return `scan-results/${scanId}/evidence/${evidenceId}.png`;
@@ -84,7 +85,7 @@ export function assertSafeEvidenceRelativePath(
   relativePath: string,
   scanId: string,
 ): string {
-  if (!/^[0-9a-fA-F-]{36}$/.test(scanId)) {
+  if (!isSafeScanId(scanId)) {
     throw new Error("Invalid scan id for evidence path.");
   }
   const expectedPrefix = `scan-results/${scanId}/evidence/`;

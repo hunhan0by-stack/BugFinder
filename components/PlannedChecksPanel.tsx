@@ -36,8 +36,9 @@ export default function PlannedChecksPanel() {
         What a basic scan reports
       </h2>
       <p className="text-muted mt-1 text-sm">
-        Phase 6 opens one authorized page and returns navigation metadata plus
-        the frontend diagnostics you selected.
+        The scanner opens one authorized page and returns navigation metadata plus
+        the frontend diagnostics you selected, including optional safe
+        interactions, issue evidence, and reversible local workflows.
       </p>
 
       <dl className="mt-5 space-y-4">
@@ -52,9 +53,10 @@ export default function PlannedChecksPanel() {
       </dl>
 
       <p className="border-line text-muted mt-6 border-t pt-4 text-sm leading-relaxed">
-        Safe interaction, dead-click, and form-state checks remain deferred.
         JSON export includes the complete basic-scan result with{" "}
         <code className="font-mono text-xs">mode: &quot;BASIC_SCAN&quot;</code>.
+        Authenticated sessions, crawling, and visual baseline regression are
+        not included in this release.
       </p>
     </section>
   );

@@ -2,13 +2,19 @@
   "name": "frontend-bug-finder",
   "version": "0.1.0",
   "private": true,
+  "engines": {
+    "node": ">=22.6.0",
+    "npm": ">=10.0.0"
+  },
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
-    "test": "node --experimental-strip-types --import ./tests/register-alias.mjs --test tests/url-validation.test.ts tests/url-validation-phase4.test.ts tests/ip-policy.test.ts tests/hostname-policy.test.ts tests/port-policy.test.ts tests/dns-policy.test.ts tests/scan-storage.test.ts tests/scan-response.test.ts tests/diagnostics.test.ts tests/phase6-diagnostics.test.ts tests/phase7-interaction.test.ts tests/phase8-evidence.test.ts tests/basic-scan.test.ts"
+    "test": "node --experimental-strip-types --import ./tests/register-alias.mjs --test --test-concurrency=1 tests/url-validation.test.ts tests/url-validation-phase4.test.ts tests/ip-policy.test.ts tests/hostname-policy.test.ts tests/port-policy.test.ts tests/dns-policy.test.ts tests/scan-storage.test.ts tests/scan-response.test.ts tests/diagnostics.test.ts tests/phase6-diagnostics.test.ts tests/phase7-interaction.test.ts tests/phase8-evidence.test.ts tests/http-rate-limiter.test.ts tests/artifact-retention.test.ts tests/storage-failure.test.ts tests/observability.test.ts tests/health.test.ts tests/runtime-config.test.ts tests/scan-api-hardening.test.ts tests/serve-scan-png.test.ts tests/phase9-privacy.test.ts tests/basic-scan.test.ts",
+    "preflight": "node scripts/environment-preflight.mjs",
+    "validate": "node scripts/release-validation.mjs"
   },
   "dependencies": {
     "@axe-core/playwright": "^4.12.1",
@@ -29,5 +35,8 @@
     "eslint-config-next": "16.2.12",
     "tailwindcss": "^4",
     "typescript": "^5"
+  },
+  "overrides": {
+    "nanoid": "3.3.17"
   }
 }

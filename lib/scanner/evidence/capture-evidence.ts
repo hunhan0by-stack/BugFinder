@@ -1,6 +1,6 @@
 import "server-only";
 
-import { mkdir, writeFile } from "node:fs/promises";
+import { mkdir } from "node:fs/promises";
 import type { Page } from "playwright";
 import type { ScannerConfig } from "@/lib/config/scanner-config";
 import { calculateEvidenceClip } from "@/lib/scanner/evidence/evidence-clip";
@@ -11,6 +11,12 @@ import {
   getEvidencePublicUrl,
   getEvidenceRelativePath,
 } from "@/lib/scanner/evidence/evidence-paths";
+import { canStoreAdditionalBytes } from "@/lib/scanner/artifact-retention";
+import { writePngBytes } from "@/lib/scanner/scan-storage";
+import {
+  isStorageFailureError,
+  storageFailureNotice,
+} from "@/lib/scanner/storage-errors";
 import type {
   DiagnosticEvidenceArtifact,
   EvidenceKind,
@@ -158,8 +164,22 @@ export async function captureClippedEvidence(input: {
     return null;
   }
 
-  const evidenceId = createEvidenceId();
   const projectRoot = input.projectRoot ?? process.cwd();
+  if (!(await canStoreAdditionalBytes(buffer.byteLength, projectRoot))) {
+    input.budget.analysis.status = "PARTIAL";
+    if (
+      !input.budget.analysis.notices.some((notice) =>
+        notice.includes("storage budget"),
+      )
+    ) {
+      input.budget.analysis.notices.push(
+        "Local artifact storage budget was reached. Additional evidence was skipped.",
+      );
+    }
+    return null;
+  }
+
+  const evidenceId = createEvidenceId();
   const absolutePath = getEvidenceAbsolutePath(
     input.budget.scanId,
     evidenceId,
@@ -168,7 +188,19 @@ export async function captureClippedEvidence(input: {
   await mkdir(getEvidenceDirectory(input.budget.scanId, projectRoot), {
     recursive: true,
   });
-  await writeFile(absolutePath, buffer);
+  try {
+    await writePngBytes(absolutePath, buffer);
+  } catch (error) {
+    if (isStorageFailureError(error)) {
+      input.budget.analysis.status = "PARTIAL";
+      const notice = storageFailureNotice(error);
+      if (notice && !input.budget.analysis.notices.includes(notice)) {
+        input.budget.analysis.notices.push(notice);
+      }
+      return null;
+    }
+    throw error;
+  }
 
   const artifact: DiagnosticEvidenceArtifact = {
     id: evidenceId,
@@ -263,8 +295,22 @@ export async function writeEvidenceBuffer(input: {
     return null;
   }
 
-  const evidenceId = createEvidenceId();
   const projectRoot = input.projectRoot ?? process.cwd();
+  if (!(await canStoreAdditionalBytes(input.buffer.byteLength, projectRoot))) {
+    input.budget.analysis.status = "PARTIAL";
+    if (
+      !input.budget.analysis.notices.some((notice) =>
+        notice.includes("storage budget"),
+      )
+    ) {
+      input.budget.analysis.notices.push(
+        "Local artifact storage budget was reached. Additional evidence was skipped.",
+      );
+    }
+    return null;
+  }
+
+  const evidenceId = createEvidenceId();
   const absolutePath = getEvidenceAbsolutePath(
     input.budget.scanId,
     evidenceId,
@@ -273,7 +319,19 @@ export async function writeEvidenceBuffer(input: {
   await mkdir(getEvidenceDirectory(input.budget.scanId, projectRoot), {
     recursive: true,
   });
-  await writeFile(absolutePath, input.buffer);
+  try {
+    await writePngBytes(absolutePath, input.buffer);
+  } catch (error) {
+    if (isStorageFailureError(error)) {
+      input.budget.analysis.status = "PARTIAL";
+      const notice = storageFailureNotice(error);
+      if (notice && !input.budget.analysis.notices.includes(notice)) {
+        input.budget.analysis.notices.push(notice);
+      }
+      return null;
+    }
+    throw error;
+  }
 
   const artifact: DiagnosticEvidenceArtifact = {
     id: evidenceId,

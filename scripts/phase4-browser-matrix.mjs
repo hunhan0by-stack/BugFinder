@@ -52,6 +52,7 @@ try {
       page.waitForResponse(
         (response) =>
           response.url().includes("/api/scan") && response.status() === 200,
+        { timeout: 180_000 },
       ),
       page.getByRole("button", { name: /scan website|running basic scan|opening website/i }).click(),
     ]);

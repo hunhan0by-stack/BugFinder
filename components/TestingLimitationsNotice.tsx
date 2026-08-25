@@ -9,18 +9,18 @@ export default function TestingLimitationsNotice() {
       </h2>
 
       <p className="text-muted mt-3 leading-relaxed">
-        A successful Phase 8 result means Chromium opened the authorized page,
-        collected the selected diagnostics, and optionally captured bounded
-        issue evidence or reversible local toggles. It does not mean the website
-        is healthy, free of bugs, or ready for release.
+        A successful result means Chromium opened the authorized page, collected
+        the selected diagnostics, and optionally captured bounded issue evidence
+        or reversible local toggles. It does not mean the website is healthy,
+        free of bugs, or ready for release.
       </p>
 
       <p className="text-muted mt-3 leading-relaxed">
-        Phase 8 does not crawl pages, authenticate, fill forms, submit forms, or
-        test payment flows. Issue screenshots are supporting evidence only — not
-        pixel-diff proof. A successful reversible toggle does not prove an entire
-        application workflow works. Zero findings does not prove the page is
-        bug-free.
+        This release does not crawl pages, authenticate, fill forms, submit
+        forms, or test payment flows. Issue screenshots are supporting evidence
+        only — not pixel-diff proof. A successful reversible toggle does not
+        prove an entire application workflow works. Zero findings does not prove
+        the page is bug-free.
       </p>
 
       <p className="text-muted mt-3 leading-relaxed">

@@ -8,6 +8,7 @@
  * Starts its own fixture server on 127.0.0.1:3100.
  */
 import { chromium } from "playwright";
+import { prepareScanForm } from "./helpers/prepare-scan-form.mjs";
 import { startLocalFixtureServer } from "../tests/helpers/local-fixture-server.mjs";
 
 const base =
@@ -15,18 +16,6 @@ const base =
   process.env.PHASE7_APP_URL ??
   process.env.PHASE4_APP_URL ??
   "http://localhost:3000";
-
-const ALL_OPTION_IDS = [
-  "consoleErrors",
-  "networkErrors",
-  "brokenImages",
-  "mobileLayout",
-  "accessibility",
-  "screenshots",
-  "safeInteractions",
-  "issueEvidence",
-  "reversibleWorkflows",
-];
 
 const results = [];
 
@@ -41,20 +30,8 @@ async function check(label, fn) {
   }
 }
 
-async function setOptions(page, optionIds) {
-  for (const id of ALL_OPTION_IDS) {
-    const locator = page.locator(`#scan-option-${id}`);
-    const checked = await locator.isChecked();
-    const want = optionIds.includes(id);
-    if (checked !== want) {
-      await locator.click();
-    }
-  }
-}
-
 async function runScan(page, url, optionIds) {
-  await page.locator("#scan-url").fill(url);
-  await setOptions(page, optionIds);
+  await prepareScanForm(page, url, optionIds);
   await Promise.all([
     page.waitForResponse(
       (response) =>

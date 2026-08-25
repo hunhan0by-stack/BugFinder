@@ -3,6 +3,7 @@
  * mode enabled, plus a local fixture on 127.0.0.1:3100.
  */
 import { chromium } from "playwright";
+import { prepareScanForm } from "./helpers/prepare-scan-form.mjs";
 import { startLocalFixtureServer } from "../tests/helpers/local-fixture-server.mjs";
 
 const base =
@@ -25,25 +26,7 @@ async function check(label, fn) {
 }
 
 async function runScan(page, url, optionIds) {
-  await page.locator("#scan-url").fill(url);
-  for (const id of [
-    "consoleErrors",
-    "networkErrors",
-    "brokenImages",
-    "mobileLayout",
-    "accessibility",
-    "screenshots",
-    "safeInteractions",
-    "issueEvidence",
-    "reversibleWorkflows",
-  ]) {
-    const locator = page.locator(`#scan-option-${id}`);
-    const checked = await locator.isChecked();
-    const want = optionIds.includes(id);
-    if (checked !== want) {
-      await locator.click();
-    }
-  }
+  await prepareScanForm(page, url, optionIds);
   await Promise.all([
     page.waitForResponse(
       (response) =>

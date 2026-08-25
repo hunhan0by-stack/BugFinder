@@ -63,7 +63,9 @@ import type { DnsLookupFn } from "@/lib/security/dns-policy";
 import { RequestGuard } from "@/lib/security/request-guard";
 import { validateScanTarget } from "@/lib/security/target-policy";
 import { sanitizeDiagnosticUrl } from "@/lib/scanner/diagnostics/sanitize-url";
-import { redactUrl } from "@/lib/utils/redact-url";
+import { logScanEvent } from "@/lib/observability/scan-logger";
+import { activeScans } from "@/lib/scanner/active-scans";
+import { cleanupExpiredArtifacts } from "@/lib/scanner/artifact-retention";
 import type {
   AccessibilityAnalysis,
   BasicScanResult,
@@ -282,6 +284,7 @@ export async function runBasicScan(
   };
 
   const release = scanLimiter.tryAcquire(config);
+  activeScans.add(input.scanId);
   let browser: Browser | null = null;
   let context: BrowserContext | null = null;
   let page: Page | null = null;
@@ -312,8 +315,14 @@ export async function runBasicScan(
     Math.max(0, Math.round(performance.now() - scanMonotonicStart));
 
   try {
+    await cleanupExpiredArtifacts();
     ensureTimeRemaining();
-    console.info(`[scan ${input.scanId}] validating target ${redactUrl(input.url)}`);
+    logScanEvent({
+      level: "info",
+      event: "scan.started",
+      scanId: input.scanId,
+      target: input.url,
+    });
 
     const target = await validateScanTarget(input.url, {
       config,
@@ -321,7 +330,6 @@ export async function runBasicScan(
     });
 
     ensureTimeRemaining();
-    console.info(`[scan ${input.scanId}] navigation started ${redactUrl(target.href)}`);
 
     browser = await launchScannerBrowser();
     context = await createScanContext(browser);
@@ -819,9 +827,23 @@ export async function runBasicScan(
       Math.round((completedAtDate.getTime() - startedAtDate.getTime()) * 100) /
       100;
 
-    console.info(
-      `[scan ${input.scanId}] navigation completed ${redactUrl(navigation.finalUrl)}`,
-    );
+    const isPartial =
+      diagnostics.status === "PARTIAL" ||
+      (options.screenshots && (!screenshot.available || !mobileScreenshot.available)) ||
+      (options.issueEvidence && issueEvidenceAnalysis.status === "PARTIAL");
+
+    logScanEvent({
+      level: isPartial ? "warn" : "info",
+      event: isPartial ? "scan.partial" : "scan.completed",
+      scanId: input.scanId,
+      target: target.href,
+      durationMs,
+      outcome: isPartial ? "partial" : "success",
+      counts: {
+        issues: diagnostics.issues.length,
+        blockedRequests: guard.stats.blockedRequestCount,
+      },
+    });
 
     return {
       success: true,
@@ -888,13 +910,37 @@ export async function runBasicScan(
     }
 
     if (isScanError(error)) {
-      console.warn(
-        `[scan ${input.scanId}] failed: ${error.code} ${error.details?.hostname ?? ""}`.trim(),
-      );
+      const timeout =
+        error.code === "SCAN_TIMEOUT" || error.code === "NAVIGATION_TIMEOUT";
+      const securityBlock =
+        error.code === "BLOCKED_HOSTNAME" ||
+        error.code === "BLOCKED_IP" ||
+        error.code === "BLOCKED_TARGET" ||
+        error.code === "UNSAFE_REDIRECT" ||
+        error.code === "DNS_RESOLUTION_FAILED";
+      logScanEvent({
+        level: "warn",
+        event: timeout
+          ? "scan.timeout"
+          : securityBlock
+            ? "scan.security_block"
+            : "scan.failed",
+        scanId: input.scanId,
+        target: input.url,
+        reasonCode: error.code,
+        outcome: "rejected",
+      });
       throw error;
     }
 
-    console.error(`[scan ${input.scanId}] failed: INTERNAL_ERROR`);
+    logScanEvent({
+      level: "error",
+      event: "scan.failed",
+      scanId: input.scanId,
+      target: input.url,
+      reasonCode: "INTERNAL_ERROR",
+      outcome: "failed",
+    });
     throw new ScanError({
       code: "INTERNAL_ERROR",
       httpStatus: 500,
@@ -913,6 +959,7 @@ export async function runBasicScan(
     await closeQuietly(page);
     await closeQuietly(context);
     await closeQuietly(browser);
+    activeScans.remove(input.scanId);
     release();
   }
 }

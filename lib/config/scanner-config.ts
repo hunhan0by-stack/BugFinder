@@ -621,11 +621,30 @@ export function getScannerConfig(
     );
   }
 
+  assertProductionFixtureDisabled(env, config.allowLocalFixture);
+
   if (env === process.env) {
     cachedConfig = config;
   }
 
   return config;
+}
+
+/**
+ * Production processes must refuse to start (or to load scanner config) when
+ * the local-fixture bypass is enabled.
+ */
+export function assertProductionFixtureDisabled(
+  env: NodeJS.ProcessEnv = process.env,
+  allowLocalFixture?: boolean,
+): void {
+  const enabled =
+    allowLocalFixture ?? parseBoolean(env.ALLOW_LOCAL_FIXTURE, false);
+  if (env.NODE_ENV === "production" && enabled) {
+    throw new Error(
+      "ALLOW_LOCAL_FIXTURE cannot be enabled when NODE_ENV=production.",
+    );
+  }
 }
 
 export function resetScannerConfigCache(): void {

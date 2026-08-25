@@ -950,6 +950,24 @@ export async function startLocalFixtureServer(preferredPort = 3100) {
       return;
     }
 
+    if (url.pathname === "/phase9/secret-privacy") {
+      response.writeHead(200, {
+        "Content-Type": "text/html; charset=utf-8",
+        Authorization: "PHASE9_SECRET_AUTH",
+      });
+      response.end(`<!doctype html>
+<html lang="en"><head><meta name="viewport" content="width=device-width, initial-scale=1"><title>Phase9 Secret Privacy</title></head>
+<body>
+  <button type="button" id="secret-btn">PHASE9_SECRET_BUTTON</button>
+  <form>
+    <input type="text" name="note" value="PHASE9_SECRET_FORM" />
+    <input type="password" name="password" value="PHASE9_SECRET_PASSWORD" />
+  </form>
+  <p>query=${url.searchParams.get("secret") ?? ""}</p>
+</body></html>`);
+      return;
+    }
+
     response.writeHead(404, { "Content-Type": "text/plain" });
     response.end("not found");
   });

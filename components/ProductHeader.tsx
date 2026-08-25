@@ -16,7 +16,7 @@ export default function ProductHeader() {
           <path d="m20 20-3.6-3.6" />
         </svg>
         <p className="text-xs font-semibold tracking-wide uppercase">
-          Frontend quality assurance — Phase 6: Frontend checks
+          Frontend quality assurance — local release
         </p>
       </div>
 
@@ -31,10 +31,10 @@ export default function ProductHeader() {
       </p>
 
       <p className="text-muted mt-3 max-w-2xl leading-relaxed">
-        In this phase the scanner validates the target, opens a single page,
-        collects selected console and network diagnostics, checks broken images,
-        mobile layout, and accessibility when enabled, and can capture desktop
-        and mobile screenshots.
+        The scanner validates the target, opens a single authorized page, and
+        runs the checks you select: console and network diagnostics, broken
+        images, mobile layout, accessibility, optional screenshots, safe
+        interactions, issue evidence, and reversible local workflows.
       </p>
     </header>
   );
